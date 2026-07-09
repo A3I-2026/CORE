@@ -1,0 +1,86 @@
+model:
+  arch: mini_gpt4rec_v2
+  model_type: pretrain_vicuna
+  freeze_rec: true
+  freeze_proj: false
+  freeze_soft_prompt: True
+  freeze_lora: true
+  max_txt_len: 512
+  proj_token_num: 1
+  proj_drop: 0
+  proj_mid_times: 2
+  end_sym: "###"
+  use_grad_ckpt: false
+  enable_soft_prompt: False
+  soft_prompt_len: 0
+  soft_prompt_bank_size: 0
+  distill_weight: 0.0
+  prompt_path: "/root/CoLLM-main/CoLLM/prompts/tallrec_sports.txt"
+  use_text_prompt: True
+  prompt_template: "User history: <ItemTitleList>\nTarget: <TargetItemTitle>\nIs this a good recommendation? Answer Yes or No."
+  llama_model: "/tuili/CoLLM/vicuna-7b"
+  user_num: -100
+  item_num: -100
+  ans_type: "v2"
+  rec_model: "MF"
+  lora_config:
+    use_lora: True
+    r:  64
+    alpha: 128
+    target_modules: ["q_proj","v_proj","o_proj"]
+    dropout: 0.05
+  rec_config:
+    user_num: -100
+    item_num: -100
+    embedding_size:  1024
+    pretrained_path:  "/root/CoLLM-main/CoLLM/minigpt4rec-log/sports_mf_best_d256.pth"
+
+datasets:
+  amazon_ood:
+    path: "/root/CoLLM-main/CoLLM/collm-datasets/sports/"
+    data_type: default
+    build_info:
+      storage: "/root/CoLLM-main/CoLLM/collm-datasets/sports/"
+    selected_indices_path:  "/root/CoLLM-main/DEALRec-main/code/prune/selected/collm_mapped_sports_version_B_samples.txt"
+    few_shot_size: 500000 
+
+run:
+  task: rec_pretrain
+  lr_sched: "linear_warmup_cosine_lr"
+  init_lr: 5e-4
+  min_lr: 1e-6
+  warmup_lr: 1e-4
+  mode: "v2"
+  weight_decay: 5e-2
+  max_epoch: 180
+  iters_per_epoch: 300
+  batch_size_train: 32
+  batch_size_eval: 1024
+  num_workers: 8
+  warmup_steps: 100
+  seed: 42
+  output_dir: "/tuili/minigpt4rec-log/sports_lora"
+  amp: true
+  resume_ckpt_path: null
+  resume_reset_epoch: False
+  evaluate: False
+  train_splits: ["train"]
+  valid_splits: ["valid"]
+  test_splits: ["test","valid"]
+  device: "npu"
+
+  world_size: 1
+  distributed: false
+  dist_url: "tcp://127.0.0.1:29502"
+  
+  accum_grad_iters: 2
+  rec_lr_scale: 1.0
+  patience: 20
+  best_metric_name:  uauc 
+  best_metric_mode: max
+  ddp_find_unused_parameters: false
+  eval_ndcg_topks: [10, 20]
+  eval_hr_topks: [10, 20]
+  min_improve: 5e-5
+  gpu: 0     # 任意合法的卡号即可，DDP 启动后会自动覆盖或利用它
+  rank: 0

@@ -1,0 +1,88 @@
+model:
+  arch: mini_gpt4rec_v2
+  model_type: pretrain_vicuna
+  
+# --- 核心训练控制（二阶段逻辑） ---
+  use_lora: True           
+  freeze_lora: False        # [关键] 冻结一阶段训练好的文本 LoRA 权重
+  freeze_rec: True         # 冻结底层推荐模型 (MF)
+  freeze_proj: True        # [关键] 冻结一阶段训练好的映射层
+  
+  max_txt_len: 512         
+  proj_token_num: 1
+  proj_drop: 0
+  proj_mid_times: 2        # 保持与一阶段一致
+  end_sym: "###"
+  
+# --- Soft Prompt (软提示) 配置 ---
+  enable_soft_prompt: True
+  soft_prompt: "soft_prompt_v2"
+  soft_prompt_len: 20       # 参照 Book 的配置，设定 3 个虚拟 Token
+  freeze_soft_prompt: False # [核心任务] 解冻并训练软提示
+  
+# --- 蒸馏配置 ---
+  distill_weight: 0.15     # 蒸馏损失权重
+  distill_text: "Analyze the user's history and predict if the user will like the target item."
+  
+  prompt_path: "/root/CoLLM-main/CoLLM/prompts/tallrec_sports.txt"
+  use_text_prompt: True
+  prompt_template: "User history: <ItemTitleList>\nTarget: <TargetItemTitle>\nIs this a good recommendation? Answer Yes or No."
+  llama_model: "/tuili/CoLLM/vicuna-7b"
+  user_num: -100
+  item_num: -100
+  ans_type: "v2"
+  
+  rec_model: "MF"          
+  lora_config:
+    use_lora: True
+    r: 64
+    alpha: 128
+    target_modules: ["q_proj","v_proj","o_proj"]
+    dropout: 0.05
+    
+  rec_config:
+    user_num: -100
+    item_num: -100
+    embedding_size: 1024
+    pretrained_path: "/root/CoLLM-main/CoLLM/minigpt4rec-log/sports_mf_best_d256.pth"
+
+datasets:
+  amazon_ood:
+    path: "/root/CoLLM-main/CoLLM/collm-datasets/sports/"
+    data_type: default
+    build_info:
+      storage: "/root/CoLLM-main/CoLLM/collm-datasets/sports/"
+    selected_indices_path:  "/root/CoLLM-main/DEALRec-main/code/prune/selected/collm_mapped_sports_version_B_samples.txt"
+    few_shot_size: 500000 
+
+run:
+  task: rec_pretrain
+  lr_sched: "linear_warmup_cosine_lr"
+  init_lr: 1e-6             
+  min_lr: 5e-4 
+  warmup_lr: 1e-4 
+  mode: 'v2'
+  weight_decay: 0.05
+  max_epoch: 20            
+  iters_per_epoch: 500      # 提速设置
+  batch_size_train: 16      # 提速设置
+  batch_size_eval: 512      # 提速设置
+  num_workers: 8            # 提速设置
+  warmup_steps: 100
+  seed: 42
+  output_dir: "/tuili/minigpt4rec-log/sports_stage2_pod"
+  
+  amp: true 
+
+  resume_ckpt_path: "/tuili/minigpt4rec-log/sports_lora/202605070256-epoch157/checkpoint_best.pth"
+  resume_reset_epoch: True  
+  
+  evaluate: False
+  train_splits: ["train"]
+  valid_splits: ["valid"]
+  test_splits: ["test"]
+  device: "npu"
+  world_size: 1
+  distributed: False
+  dist_url: "tcp://127.0.0.1:29509"
+  accum_grad_iters: 4       # 等效 Batch Size 为 64

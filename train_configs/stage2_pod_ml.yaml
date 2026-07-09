@@ -1,0 +1,90 @@
+model:
+  arch: mini_gpt4rec_v2
+  model_type: pretrain_vicuna
+# --- 核心训练控制 ---
+  use_lora: True           # 开启 LoRA 模块 (用于推理)
+  freeze_lora: False        
+  freeze_rec: true         # [关键] 冻结底层推荐模型 (MF/LightGCN)
+  freeze_proj: True       # [关键] 解冻 CIE 映射层 (让它适应 LLM)
+  max_txt_len: 1024
+  proj_token_num: 1
+  proj_drop: 0
+  proj_mid_times: 2
+  #proj_mid: 3
+  end_sym: "###"
+  #use_grad_ckpt: true
+  enable_soft_prompt: true
+    # --- Soft Prompt 配置 ---
+  use_text_prompt: True   # [关键] 关闭原有文本提示，强制使用 Soft Prompt
+  soft_prompt: "soft_prompt_v2" # 随便起个名，触发初始化
+  soft_prompt_len: 3     #32
+  freeze_soft_prompt: false 
+  # --- 蒸馏配置 ---
+  distill_weight: 0.15      # 开启蒸馏 Loss
+  # [新增] 教师模板：这是离散的 Prompt 模板，Soft Prompt 将模仿这个语义
+  distill_text: "Analyze the user's history and predict if the user will like the target item."
+  prompt_path: "/root/CoLLM-main/CoLLM/prompts/tallrec_movie.txt"
+  llama_model: "/tuili/CoLLM/vicuna-7b"
+  user_num: -100
+  item_num: -100
+  ans_type: "v2"
+  rec_model: "MF"
+  lora_config:
+    use_lora: true
+    r: 64
+    alpha: 128
+    target_modules: ["q_proj","v_proj","o_proj"] 
+    dropout: 0.05
+  rec_config:
+    user_num: -100
+    item_num: -100
+    embedding_size:  4096
+    pretrained_path:  "/root/CoLLM-main/CoLLM/minigpt4rec-log/0912_ml1m_oodv2_best_model_d256lr-0.001wd0.0001.pth"  
+
+datasets:
+  movie_ood:
+    path: "/root/CoLLM-main/CoLLM/collm-datasets/ml-1m/"
+    data_type: default
+    build_info:
+      storage: "/root/CoLLM-main/CoLLM/collm-datasets/ml-1m/"
+    few_shot_size: 1762700
+    selected_indices_path:  null #"/root/CoLLM-main/DEALRec-main/code/prune/selected/collm_mapped_samples_indices.txt"
+
+
+run:
+  task: rec_pretrain
+  lr_sched: "linear_warmup_cosine_lr" #"cosine"
+  init_lr: 5e-5 #4
+  min_lr: 1e-6 #5
+  warmup_lr: 1e-4 #5
+  mode: 'v2'
+  weight_decay: 1e-2
+  max_epoch: 30
+  iters_per_epoch: 50
+  batch_size_train: 16
+  batch_size_eval: 128
+  num_workers: 4
+  warmup_steps: 200
+  seed: 42
+  output_dir:  "/tuili/minigpt4rec-log/soft_prompt" #"/tuili/minigpt4rec-log/CIE"
+  amp: true
+  resume_ckpt_path:  "/tuili/minigpt4rec-log/dealrec/202604161157-auc0.7191/checkpoint_best.pth"
+  resume_reset_epoch: True
+  evaluate: False
+  train_splits: ["train"]
+  valid_splits: ["valid"]
+  test_splits: ["test","valid"]  
+  device: "npu"
+  world_size: 1
+  dist_url:  "tcp://127.0.0.1:29502"
+  distributed: false
+  accum_grad_iters: 4
+  rec_lr_scale: 0.05
+  patience: 10
+  best_metric_name: uauc #uauc
+  best_metric_mode: max
+  ddp_find_unused_parameters: false #True
+  eval_ndcg_topks: [10, 20]
+  eval_hr_topks: [10, 20]
+  #min_improve: 5e-5
+

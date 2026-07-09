@@ -1,0 +1,84 @@
+model:
+  arch: mini_gpt4rec_v2
+  model_type: pretrain_vicuna
+# --- 核心训练控制 ---
+  use_lora: True           
+  freeze_lora: true      
+  freeze_rec: True         # 依然冻结底座推荐模型
+  freeze_proj: False       # 解冻映射层
+  max_txt_len: 1024
+  proj_token_num: 1
+  proj_drop: 0.1
+  proj_mid_times: 2
+  end_sym: "###"
+  enable_soft_prompt: True
+    # --- Soft Prompt 配置 ---
+  use_text_prompt: True
+  soft_prompt: "soft_prompt_v2" 
+  soft_prompt_len: 3      
+  freeze_soft_prompt: False # 解冻软提示，使其学习更精准的个性化特征
+  # --- 蒸馏配置 ---
+  distill_weight: 0.15      
+  distill_text: "Analyze the user's history and predict if the user will like the target item."
+  prompt_path: "/root/CoLLM-main/CoLLM/prompts/softprompt_amazon.txt"
+  llama_model: "/tuili/CoLLM/vicuna-7b"
+  user_num: -100
+  item_num: -100
+  ans_type: "v2"
+  rec_model: "MF"
+  lora_config:
+    use_lora: True
+    r: 64
+    alpha: 128
+    target_modules: ["q_proj","v_proj","o_proj"] 
+    dropout: 0.05
+  rec_config:
+    user_num: -100
+    item_num: -100
+    embedding_size: 4096
+    pretrained_path: "/root/CoLLM-main/CoLLM/minigpt4rec-log/0912_ml1m_oodv2_best_model_d256lr-0.001wd0.0001.pth"
+
+datasets:
+  # 必须保持 movie_ood 键名，以匹配底层注册表，避免之前的 AttributeError
+  amazon_ood:
+    path: "/root/CoLLM-main/CoLLM/collm-datasets/amazon-book/"
+    data_type: default
+    build_info:
+      storage: "/root/CoLLM-main/CoLLM/collm-datasets/amazon-book/"
+    few_shot_size: 500000
+    selected_indices_path: "/root/CoLLM-main/DEALRec-main/code/prune/selected/collm_mapped_book_samples.txt"
+
+
+run:
+  task: rec_pretrain
+  lr_sched: "linear_warmup_cosine_lr"
+  init_lr: 1e-4              # 全量微调时可适当提高，或保持 1e-5 以保稳
+  min_lr: 1e-6 
+  warmup_lr: 1e-5 
+  mode: 'v2'
+  weight_decay: 0.1
+  max_epoch:  240
+  iters_per_epoch: 150       # 针对 Book 增加单轮迭代次数
+  batch_size_train: 16
+  batch_size_eval: 128
+  num_workers: 4
+  warmup_steps: 200
+  seed: 42
+  output_dir: "/tuili/minigpt4rec-log/amazonbook_stage3"
+  amp: true
+  # 此处需指向您 Stage 2 跑出的最佳权重
+  resume_ckpt_path: "/tuili/minigpt4rec-log/stage2_init_merged.pth" 
+  resume_reset_epoch: True
+  evaluate: False
+  train_splits: ["train"]
+  valid_splits: ["valid"]
+  test_splits: ["test","valid"]
+  device: "npu"
+  world_size: 1
+  dist_url: "tcp://127.0.0.1:29502"
+  distributed: false
+  accum_grad_iters: 8
+  rec_lr_scale: 0.05
+  patience: 40
+  best_metric_name: uauc
+  best_metric_mode: max
