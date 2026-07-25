@@ -60,7 +60,7 @@ class SASRecModel(nn.Module):
         """
         if isinstance(module, (nn.Linear, nn.Embedding)):
             # Slightly different from the TF version which uses truncated_normal for initialization
-            # cf https://github.com/pytorch/pytorch/pull/5617
+    
             module.weight.data.normal_(mean=0.0, std=self.args.initializer_range)
         elif isinstance(module, LayerNorm):
             module.bias.data.zero_()
