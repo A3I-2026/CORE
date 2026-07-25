@@ -61,7 +61,7 @@ run:
   num_workers: 4
   warmup_steps: 200
   seed: 42
-  output_dir: "/your/path/CORE/minigpt4rec-log/dealrec"
+  output_dir: "/your/path/CORE/minigpt4rec-log/dataprune"
   amp: true
 
   resume_ckpt_path: null
