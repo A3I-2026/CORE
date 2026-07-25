@@ -77,8 +77,8 @@ class model_hyparameters(object):
         self.embed_size = 64
         self.batch_size = 2048
         self.epoch = 5000
-        self.data_path = '/home/zyang/code-2022/RecUnlearn/data/'
-        self.dataset = 'ml-100k' #'yahoo-s622-01' #'yahoo-small2' #'yahooR3-iid-001'
+        self.data_path = 'xxx'
+        self.dataset = 'ml-1m'
         self.layer_size='[64,64]'
         self.verbose = 1
         self.Ks='[10]'
@@ -277,8 +277,7 @@ def run_a_trail(train_config,log_file=None, save_mode=False,save_file=None,need_
     # args.hyper_para_info()
 
     # load dataset
-    # data_dir = "/home/zyang/LLM/MiniGPT-4/dataset/ml-100k/"
-    # data_dir = "/home/sist/zyang/LLM/datasets/ml-100k/"
+
     # train_data = pd.read_pickle(data_dir+"train.pkl")[['uid','iid',"sessionItems",'label']].values
     # valid_data = pd.read_pickle(data_dir+"valid.pkl")[['uid','iid',"sessionItems",'label']].values
     # test_data = pd.read_pickle(data_dir+"test.pkl")[['uid','iid',"sessionItems",'label']].values
