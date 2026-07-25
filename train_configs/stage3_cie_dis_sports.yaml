@@ -8,7 +8,7 @@ model:
   freeze_proj: False       # [关键] 解冻 CIE 映射层 (让它适应 LLM)
   max_txt_len: 256
   proj_token_num: 1
-  proj_drop: 0.05  #0,  ,"0.1",0.05,0.2,0.3,0.5
+  proj_drop: 0.05  #0,"0.1",0.05,0.2,0.3,0.5
   proj_mid_times: 2
   #proj_mid: 3
   end_sym: "###"
@@ -18,12 +18,12 @@ model:
   use_text_prompt: True
   soft_prompt: "soft_prompt_v2" # 随便起个名，触发初始化
   soft_prompt_len: 20      # 软提示长度
-  freeze_soft_prompt: False # [关键] 解冻软提示 (让它学习)
+  freeze_soft_prompt: False 
   # --- 蒸馏配置 ---
   distill_weight: 0.15      # 开启蒸馏 Loss
   distill_text: "Analyze the user's history and predict if the user will like the target item."
-  prompt_path: "/root/CoLLM-main/CoLLM/prompts/tallrec_sports.txt"
-  llama_model: "/tuili/CoLLM/vicuna-7b"
+  prompt_path: "/your/path/CORE/prompts/core_sports.txt"
+  llama_model: "/your/path/CORE/minigpt4rec-log/vicuna-7b"
   user_num: -100
   item_num: -100
   ans_type: "v2"
@@ -38,17 +38,17 @@ model:
     user_num: -100
     item_num: -100
     embedding_size:  1024
-    pretrained_path:  "/root/CoLLM-main/CoLLM/minigpt4rec-log/sports_mf_best_d256.pth"  
+    pretrained_path:  "/your/path/CORE/minigpt4rec-log/sports_mf_best_d256.pth"  
 
 datasets:
   amazon_ood:
-    path: "/root/CoLLM-main/CoLLM/collm-datasets/sports/"
+    path: "/your/path/COREdatasets/sports/"
     data_type: default
     build_info:
-      storage: "/root/CoLLM-main/CoLLM/collm-datasets/sports/"
+      storage: "/your/path/COREdatasets/sports/"
     #sample_ratio: 1.0
-    few_shot_size:  650000
-    selected_indices_path:  "/root/CoLLM-main/DEALRec-main/code/prune/selected/collm_mapped_sports_version_B_samples.txt"
+    few_shot_size:  150000
+    selected_indices_path:  "/your/path/CORE/dataprune/prune/selected/amazon_sports_indices.txt"
 
 
 run:
@@ -66,9 +66,9 @@ run:
   num_workers: 2
   warmup_steps: 200
   seed: 42
-  output_dir:  "/tuili/minigpt4rec-log/sports_CIE" 
+  output_dir:  "/your/path/CORE/minigpt4rec-log/sports_CIE" 
   amp: True
-  resume_ckpt_path:   "/tuili/minigpt4rec-log/stage2_init_merged_sports.pth" 
+  resume_ckpt_path:   "/your/path/CORE/minigpt4rec-log/stage2_init_merged_sports.pth" 
   resume_reset_epoch: True
   evaluate: false
   train_splits: ["train"]
@@ -76,7 +76,7 @@ run:
   test_splits: ["test","valid"]  
   device: "npu"
   world_size: 1
-  dist_url:  "tcp://127.0.0.1:29502"
+  dist_url:  "tcp://127.0.0.1:xxx"
   distributed: false
   accum_grad_iters: 4
   rec_lr_scale: 1.0 #0.05
