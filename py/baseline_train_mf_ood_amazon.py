@@ -119,10 +119,8 @@ def run_a_trail(train_config,log_file=None, save_mode=False,save_file=None,need_
     torch.cuda.manual_seed_all(seed)
 
     # load dataset
-    # data_dir = "/home/zyang/LLM/MiniGPT-4/dataset/ml-100k/"
-    # data_dir = "/home/sist/zyang/LLM/datasets/ml-1m/"
-    # data_dir = "/data/zyang/datasets/amazon/"
-    data_dir = "/data/zyang/datasets/amazon_book_new/"
+
+    data_dir = "/your/path/CORE/datasets/amazon_book_new/"
     train_data = pd.read_pickle(data_dir+"train_ood2.pkl")[['uid','iid','label']].values
     valid_data = pd.read_pickle(data_dir+"valid_ood2.pkl")[['uid','iid','label']].values
     # valid_data = pd.read_pickle(data_dir+"valid_ood2.pkl")[['uid','iid','label','not_cold']]
@@ -308,8 +306,7 @@ def run_a_trail(train_config,log_file=None, save_mode=False,save_file=None,need_
 #     dw_ = [1e-6]
 #     # embedding_size_ = [32, 64, 128, 156, 512]
 #     embedding_size_ = [256]
-#     save_path = "/data/zyang/LLM/PretrainedModels/mf/"
-#     # save_path = "/home/sist/zyang/LLM/PretrainedModels/mf/"
+
 #     # try:
 #     #     f = open("rec_mf_search_lr"+str(lr_[0])+".log",'rw+')
 #     # except:
@@ -336,7 +333,6 @@ def run_a_trail(train_config,log_file=None, save_mode=False,save_file=None,need_
 
 
 
-#### /data/zyang/LLM/PretrainedModels/mf/best_model_d128.pth
 # with prtrain version:
 if __name__=='__main__':
     # lr_ = [1e-1,1e-2,1e-3]
@@ -363,8 +359,7 @@ if __name__=='__main__':
                     "batch_size":1024
                 }
                 print(train_config)
-                # save_path = "/data/zyang/LLM/PretrainedModels/mf/0912_ml100k_oodv2_best_model_d64lr-0.001wd0.0001.pth"
-                # save_path = "/data/zyang/LLM/PretrainedModels/mf/0912_ml1m_oodv2_best_model_d256lr-0.001wd0.0001.pth"
+
                 save_path = "/data/zyang/LLM/PretrainedModels/mf/0923_book_oodv2_best_model_d256lr-0.001wd1e-06.pth"
                 # if os.path.exists(save_path + "0912_ml100k_oodv2_best_model_d" + str(embedding_size)+ 'lr-'+ str(lr) + "wd"+str(wd) + ".pth"):
                 #     save_path += "0912_ml100k_oodv2_best_model_d" + str(embedding_size)+ 'lr-'+ str(lr) + "wd"+str(wd) + ".pth"
