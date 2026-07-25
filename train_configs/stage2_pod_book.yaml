@@ -20,8 +20,8 @@ model:
   # --- 蒸馏配置 ---
   distill_weight: 0.15      
   distill_text: "Analyze the user's history and predict if the user will like the target item."
-  prompt_path: "/root/CoLLM-main/CoLLM/prompts/softprompt_amazon.txt"
-  llama_model: "/tuili/CoLLM/vicuna-7b"
+  prompt_path: "/your/path/CORE/prompts/softprompt_amazon.txt"
+  llama_model: "/your/path/CORE/minigpt4rec-log/vicuna-7b"
   user_num: -100
   item_num: -100
   ans_type: "v2"
@@ -36,17 +36,17 @@ model:
     user_num: -100
     item_num: -100
     embedding_size: 4096
-    pretrained_path: "/root/CoLLM-main/CoLLM/minigpt4rec-log/0912_ml1m_oodv2_best_model_d256lr-0.001wd0.0001.pth"  
+    pretrained_path: "/your/path/CORE/0912_ml1m_oodv2_best_model_d256lr-0.001wd0.0001.pth"  
 
 datasets:
 
   amazon_ood:
-    path: "/root/CoLLM-main/CoLLM/collm-datasets/book/"
+    path: "/your/path/CORE/collm-datasets/book/"
     data_type: default
     build_info:
-      storage: "/root/CoLLM-main/CoLLM/collm-datasets/amazon-book/"
+      storage: "/your/path/CORE/datasets/amazon-book/"
     few_shot_size: 500000
-    selected_indices_path: "/root/CoLLM-main/DEALRec-main/code/prune/selected/collm_mapped_book_samples.txt"
+    selected_indices_path: "/your/path/CORE/dataprune/prune/selected/amazon_book_indices.txt"
 
 
 run:
@@ -64,11 +64,10 @@ run:
   num_workers: 4
   warmup_steps: 200
   seed: 42
-  output_dir: "/tuili/minigpt4rec-log/book_pod"
+  output_dir: "/your/path/CORE/minigpt4rec-log/book_pod"
   amp: true
-  
-  # [重要] 这里的 resume_ckpt_path 必须指向你 Stage 1a 跑出的 0.666+ 那个最佳 LoRA 权重
-  resume_ckpt_path: "/tuili/minigpt4rec-log/amazonbook/202604220434/checkpoint_best.pth" 
+
+  resume_ckpt_path: "/your/path/CORE/minigpt4rec-log/amazonbook/xxxx/checkpoint_best.pth" 
   resume_reset_epoch: True
   evaluate: False
   train_splits: ["train"]
@@ -76,7 +75,7 @@ run:
   test_splits: ["test","valid"]
   device: "npu"
   world_size: 1
-  dist_url: "tcp://127.0.0.1:29502"
+  dist_url: "tcp://127.0.0.1:xxx"
   distributed: false
   accum_grad_iters: 8
   rec_lr_scale: 0.05
