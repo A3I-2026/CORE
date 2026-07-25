@@ -2,20 +2,15 @@ import torch
 import os
 
 # --- 路径配置 ---
-# 1. 身体：一阶段 LoRA 的最佳检查点 (请确保此路径存在)
-#path_stage1a = "/tuili/minigpt4rec-log/amazonbook/202604220434/checkpoint_best.pth"
+# 1. 一阶段 LoRA 的ckpt
 
-#path_stage1a = "/tuili/minigpt4rec-log/sports_lora/202605070256-epoch157/checkpoint_best.pth"
+path_stage1a = "/your/path/CORE/minigpt4rec-log/lora/xxxx/checkpoint_best.pth" 
+# 2. 软提示预热的最佳检查点ckpt
 
-path_stage1a = "/tuili/minigpt4rec-log/sports_lora/20/20260608081/checkpoint_best.pth" 
-# 2. 大脑：软提示预热的最佳检查点 (请确保此路径存在)
-#path_stage1b = "/tuili/minigpt4rec-log/book_pod/202604220936/checkpoint_best.pth"
 
-#path_stage1b = "/tuili/minigpt4rec-log/sports_stage2_pod/20260513014/checkpoint_best.pth"
-
-path_stage1b = "/tuili/minigpt4rec-log/sports_stage2_pod/20/20260611014/checkpoint_best.pth"  #无deal
+path_stage1b = "/your/path/CORE/minigpt4rec-log/ml1m_stage2_pod/xxx/checkpoint_best.pth"  #无deal
 # 3. 输出：二阶段联合训练的启动文件
-output_path = "/tuili/minigpt4rec-log/stage2_init_merged_sports20-612.pth"
+output_path = "/your/path/CORE/minigpt4rec-log/stage2_init_merged_lora.pth"
 
 # --- 执行逻辑 ---
 print(f"正在读取 Stage 1a (Base): {path_stage1a}")
@@ -58,4 +53,4 @@ if output_dir and not os.path.exists(output_dir):
 
 torch.save(new_checkpoint, output_path)
 print(f"\n🎉 合并成功！已保存至: {output_path}")
-print("👉 下一步：请在 stage2_joint_finetune.yaml 中将 resume_ckpt_path 设置为该路径。")
+print("👉 下一步：请在stage3.yaml 中将 resume_ckpt_path 设置为该路径。")
