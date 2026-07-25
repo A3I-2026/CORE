@@ -16,7 +16,7 @@ model:
   soft_prompt_len: 0
   soft_prompt_bank_size: 0
   distill_weight: 0.0
-  prompt_path: "/root/CoLLM-main/CoLLM/prompts/tallrec_movie.txt"
+  prompt_path: "/your/path/CORE/prompts/core_movie.txt"
   use_text_prompt: True
   prompt_template: "User history: <ItemTitleList>\nTarget: <TargetItemTitle>\nIs this a good recommendation? Answer Yes or No."
   llama_model: "/tuili/CoLLM/vicuna-7b"
@@ -34,17 +34,15 @@ model:
     user_num: -100
     item_num: -100
     embedding_size:  4096
-    pretrained_path:  "/root/CoLLM-main/CoLLM/minigpt4rec-log/0912_ml1m_oodv2_best_model_d256lr-0.001wd0.0001.pth"  #"/tuili/minigpt4rec-log/collm-mf-ml-best.pth"
+    pretrained_path:  "/your/path/CORE/minigpt4rec-log/0912_ml1m_oodv2_best_model_d256lr-0.001wd0.0001.pth"  
 
 datasets:
   movie_ood:
-    path: "/root/CoLLM-main/CoLLM/collm-datasets/ml-1m/"
+    path: "/your/path/CORE/datasets/ml-1m/"
     data_type: default
     build_info:
-      storage: "/root/CoLLM-main/CoLLM/collm-datasets/ml-1m/"
-    #selected_indices_path: "/root/CoLLM-main/DEALRec-main/code/prune/selected/collm_mapped_samples_indices.txt" 
-    #selected_indices_path: "/root/CoLLM-main/DEALRec-main/code/prune/selected/ml-1m_adaptive-first.txt"  #sample
-    few_shot_size: 170000 #sample
+      storage: "/your/path/CORE/datasets/ml-1m/"
+    few_shot_size: 100000 #sample
     selected_indices_path:  null
 
 
@@ -63,7 +61,7 @@ run:
   num_workers: 4
   warmup_steps: 200
   seed: 42
-  output_dir: "/tuili/minigpt4rec-log/dealrec"
+  output_dir: "/your/path/CORE/minigpt4rec-log/dealrec"
   amp: true
 
   resume_ckpt_path: null
@@ -74,7 +72,7 @@ run:
   test_splits: ["test","valid"]
   device: "npu"
   world_size: 1
-  dist_url: "tcp://127.0.0.1:29502"
+  dist_url: "tcp://127.0.0.1:xxx"
   distributed: false
   accum_grad_iters: 8
   rec_lr_scale: 0.05
