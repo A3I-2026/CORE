@@ -82,16 +82,13 @@ def _dealrec_generate_indices(cfg):
         if ds is None:
             return None
             
-        # =========================================================
-        # 🚀 修复核心1：优先尊重 YAML 配置文件中自己写好的路径！
-        # 如果文件已经存在，直接返回，绝对不要再触发后台生成和强制改名！
-        # =========================================================
+    
         try:
             sip = getattr(ds, 'selected_indices_path', None)
             if sip is None and hasattr(ds, 'build_info'):
                 sip = getattr(ds.build_info, 'selected_indices_path', None)
             if sip and os.path.isfile(sip):
-                print(f"[DEALRec融合] 🎯 检测到 YAML 已配置有效索引文件，跳过后台生成，直接使用: {sip}")
+                print(f"🎯 检测到 YAML 已配置有效索引文件，跳过后台生成，直接使用: {sip}")
                 return sip
         except Exception:
             pass
@@ -147,7 +144,7 @@ def _dealrec_generate_indices(cfg):
                 except Exception:
                     dname = None
                 if not isinstance(dname, str) or not os.path.isdir(os.path.join(data_root, dname)):
-                    print(f"[DEALRec融合] 严谨版数据集不可用: {dname}")
+                    print(f" 严谨版数据集不可用: {dname}")
                 else:
                     cmd = [sys.executable, os.path.join(prune_dir, 'prune.py'),
                            '--data_dir', data_root,
@@ -159,7 +156,7 @@ def _dealrec_generate_indices(cfg):
                            '--iteration', str(int(getattr(ds.dealrec, 'iteration', 1))),
                            '--recursion_depth', str(int(getattr(ds.dealrec, 'recursion_depth', 5000)))
                           ]
-                    print(f"[DEALRec融合] 启动严谨版: {' '.join(cmd)}")
+                    print(f"启动严谨版: {' '.join(cmd)}")
                     subprocess.run(cmd, cwd=prune_dir, check=True)
                     import torch
                     pt_path = os.path.join(prune_dir, 'selected', f"{dname}_{int(few_shot_size)}.pt")
@@ -167,24 +164,21 @@ def _dealrec_generate_indices(cfg):
                         idxs = torch.load(pt_path)
                         out_dir = os.path.join(prune_dir, 'selected')
                         os.makedirs(out_dir, exist_ok=True)
-                        
-                        # =========================================================
-                        # 🚀 修复核心2 (严格模式下)：动态命名，彻底告别硬编码！
-                        # =========================================================
+                   
                         out_name = f"{dataset_key}_auto_indices.txt"
                         out_path = os.path.join(out_dir, out_name)
                         
                         with open(out_path, 'w', encoding='utf-8') as f:
                             for idx in idxs:
                                 f.write(str(int(idx)) + '\n')
-                        print(f"[DEALRec融合] 严谨版动态索引: {out_path}, 大小: {len(idxs)}")
+                        print(f"严谨版动态索引: {out_path}, 大小: {len(idxs)}")
                         try:
                             setattr(ds, 'selected_indices_path', out_path)
                         except Exception:
                             pass
                         return out_path
             except Exception as e:
-                print(f"[DEALRec融合] 严谨版失败: {e}")
+                print(f" 严谨版失败: {e}")
                 
         try:
             uid_col = 'uid'
@@ -241,17 +235,14 @@ def _dealrec_generate_indices(cfg):
                 selected = selected[:int(few_shot_size)]
             out_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'DEALRec-main', 'code', 'prune', 'selected')
             os.makedirs(out_dir, exist_ok=True)
-            
-            # =========================================================
-            # 🚀 修复核心3 (普通模式下)：动态命名，彻底告别硬编码！
-            # =========================================================
+    
             out_name = f"{dataset_key}_auto_indices.txt"
             out_path = os.path.join(out_dir, out_name)
             
             with open(out_path, 'w', encoding='utf-8') as f:
                 for idx in selected:
                     f.write(str(int(idx)) + '\n')
-            print(f"[DEALRec融合] 已动态生成备用索引文件: {out_path}, 大小: {len(selected)}")
+            print(f"已动态生成备用索引文件: {out_path}, 大小: {len(selected)}")
             try:
                 setattr(ds, 'selected_indices_path', out_path)
             except Exception:
@@ -268,7 +259,7 @@ def parse_args():
 
     # 支持绝对路径和相对路径，默认使用相对路径
     parser.add_argument("--cfg-path", 
-                        default='train_configs/collm_pretrain_mf_ood.yaml', 
+                        default='train_configs/stage1_lora_ml.yaml', 
                         help="path to configuration file. 可以使用绝对路径或相对路径")
     parser.add_argument(
         "--options",
@@ -335,7 +326,7 @@ def main():
     signal.signal(signal.SIGTERM, signal_handler)
     print("[信号处理] 信号处理器已注册")
     
-    # 设置临时目录到本地共享内存，避免 NFS 清理冲突
+ 
     try:
         os.environ["TMPDIR"] = "/dev/shm"
         tempfile.tempdir = os.environ.get("TMPDIR")
@@ -424,13 +415,13 @@ def main():
     datasets = task.build_datasets(cfg)
     # cfg.model_cfg.get("user_num", "default")
     data_name = list(datasets.keys())[0]
-    # data_dir = "/home/sist/zyang/LLM/datasets/ml-1m/"
+ 
     try: #  movie
         data_dir = cfg.datasets_cfg.movie_ood.path
     except: # amazon
         data_dir = cfg.datasets_cfg.amazon_ood.path
     print("data dir:", data_dir)
-    # data_dir = "/data/zyang/datasets/ml-1m/"
+
     train_ = pd.read_pickle(data_dir+"train_ood2.pkl")
     valid_ = pd.read_pickle(data_dir+"valid_ood2.pkl")
     test_ = pd.read_pickle(data_dir+"test_ood2.pkl")
