@@ -4,11 +4,11 @@ model:
 # --- 核心训练控制 ---
   use_lora: false           
   freeze_lora: true        
-  freeze_rec: true         # [关键] 冻结底层推荐模型 (MF/LightGCN)
-  freeze_proj: False       # [关键] 解冻 CIE 映射层 (让它适应 LLM)
+  freeze_rec: true         
+  freeze_proj: False       
   max_txt_len: 1024
   proj_token_num: 1
-  proj_drop: 0.01  #0,  ,"0.1",0.05,0.2,0.3,0.5
+  proj_drop: 0.01  #0, "0.1",0.05,0.2,0.3,0.5
   proj_mid_times: 2
   #proj_mid: 3
   end_sym: "###"
@@ -22,8 +22,8 @@ model:
   # --- 蒸馏配置 ---
   distill_weight: 0.15      # 开启蒸馏 Loss
   distill_text: "Analyze the user's history and predict if the user will like the target item."
-  prompt_path: "/root/CoLLM-main/CoLLM/prompts/tallrec_movie.txt"
-  llama_model: "/tuili/CoLLM/vicuna-7b"
+  prompt_path: "/your/path/CORE/prompts/tallrec_movie.txt"
+  llama_model: "/your/path/CORE/minigpt4rec-log/vicuna-7b"
   user_num: -100
   item_num: -100
   ans_type: "v2"
@@ -38,17 +38,17 @@ model:
     user_num: -100
     item_num: -100
     embedding_size:  4096
-    pretrained_path:  "/root/CoLLM-main/CoLLM/minigpt4rec-log/0912_ml1m_oodv2_best_model_d256lr-0.001wd0.0001.pth"  
+    pretrained_path:  "/your/path/CORE/minigpt4rec-log/0912_ml1m_oodv2_best_model_d256lr-0.001wd0.0001.pth"  
 
 datasets:
   movie_ood:
-    path: "/root/CoLLM-main/CoLLM/collm-datasets/ml-1m/"
+    path: "/your/path/CORE/datasets/ml-1m/"
     data_type: default
     build_info:
-      storage: "/root/CoLLM-main/CoLLM/collm-datasets/ml-1m/"
+      storage: "/your/path/CORE/datasets/ml-1m/"
     #sample_ratio: 1.0
     few_shot_size:  15000
-    selected_indices_path:  "/root/CoLLM-main/DEALRec-main/code/prune/selected/collm_mapped_samples_indices.txt"
+    selected_indices_path:  "/your/path/CORE/dataprune/prune/selected/ml-1m_adaptive_coreset.txt"
 
 
 run:
@@ -66,9 +66,9 @@ run:
   num_workers: 4
   warmup_steps: 200
   seed: 42
-  output_dir:  "/tuili/minigpt4rec-log/CIE" 
+  output_dir:  "/your/path/CORE/minigpt4rec-log/CIE" 
   amp: False
-  resume_ckpt_path:   "/tuili/minigpt4rec-log/stage2_init_merged_ml.pth"  #"/tuili/minigpt4rec-log/dealrec/20260201082-auc0.6686-epoch39/checkpoint_best.pth"
+  resume_ckpt_path:   "/your/path/CORE//minigpt4rec-log/stage2_init_merged_ml.pth" 
   resume_reset_epoch: True
   evaluate: False
   train_splits: ["train"]
@@ -76,7 +76,7 @@ run:
   test_splits: ["test","valid"]  
   device: "npu"
   world_size: 1
-  dist_url:  "tcp://127.0.0.1:29502"
+  dist_url:  "tcp://127.0.0.1:xxx"
   distributed: false
   accum_grad_iters: 8
   rec_lr_scale: 0.05 #0.05
