@@ -15,10 +15,10 @@ model:
   soft_prompt_len: 0
   soft_prompt_bank_size: 0
   distill_weight: 0.0
-  prompt_path: "/root/CoLLM-main/CoLLM/prompts/tallrec_sports.txt"
+  prompt_path: "/your/path/CORE/prompts/core_sports.txt"
   use_text_prompt: True
   prompt_template: "User history: <ItemTitleList>\nTarget: <TargetItemTitle>\nIs this a good recommendation? Answer Yes or No."
-  llama_model: "/tuili/CoLLM/vicuna-7b"
+  llama_model: "/your/path/CORE/minigpt4rec-log/vicuna-7b"
   user_num: -100
   item_num: -100
   ans_type: "v2"
@@ -33,15 +33,15 @@ model:
     user_num: -100
     item_num: -100
     embedding_size:  1024
-    pretrained_path:  "/root/CoLLM-main/CoLLM/minigpt4rec-log/sports_mf_best_d256.pth"
+    pretrained_path:  "/your/path/CORE/minigpt4rec-log/sports_mf_best_d256.pth"
 
 datasets:
   amazon_ood:
-    path: "/root/CoLLM-main/CoLLM/collm-datasets/sports/"
+    path: "/your/path/CORE/datasets/sports/"
     data_type: default
     build_info:
-      storage: "/root/CoLLM-main/CoLLM/collm-datasets/sports/"
-    selected_indices_path:  "/root/CoLLM-main/DEALRec-main/code/prune/selected/collm_mapped_sports_version_B_samples.txt"
+      storage: "/your/path/CORE/datasets/sports/"
+    selected_indices_path:  "/your/path/CORE/dataprune/prune/selected/amazon__sports_indices.txt"
     few_shot_size: 500000 
 
 run:
@@ -59,7 +59,7 @@ run:
   num_workers: 8
   warmup_steps: 100
   seed: 42
-  output_dir: "/tuili/minigpt4rec-log/sports_lora"
+  output_dir: "/your/path/CORE/minigpt4rec-log/sports_lora"
   amp: true
   resume_ckpt_path: null
   resume_reset_epoch: False
@@ -71,7 +71,7 @@ run:
 
   world_size: 1
   distributed: false
-  dist_url: "tcp://127.0.0.1:29502"
+  dist_url: "tcp://127.0.0.1:xxx"
   
   accum_grad_iters: 2
   rec_lr_scale: 1.0
@@ -82,5 +82,5 @@ run:
   eval_ndcg_topks: [10, 20]
   eval_hr_topks: [10, 20]
   min_improve: 5e-5
-  gpu: 0     # 任意合法的卡号即可，DDP 启动后会自动覆盖或利用它
+  gpu: 0    
   rank: 0
