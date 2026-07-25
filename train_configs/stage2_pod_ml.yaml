@@ -47,7 +47,7 @@ datasets:
     build_info:
       storage: "/your/path/CORE/datasets/ml-1m/"
     few_shot_size: 1762700
-    selected_indices_path:  null 
+    selected_indices_path:  null #"/your/path/CORE/dataprune/prune/selected/ml-1m_adaptive_coreset.txt"
 
 
 run:
