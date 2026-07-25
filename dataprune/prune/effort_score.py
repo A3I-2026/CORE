@@ -40,11 +40,7 @@ class SupervisedDataset(Dataset):
         
         for idx in range(len(user_seq)):
             input_seq = user_seq[idx]
-            
-            # =================================================================
-            # 🚀 提速与防爆核心 1：强制截断用户行为序列！
-            # 限制在最近的 64 个交互，避免大模型 OOM，将 20 小时耗时缩短到极速！
-            # =================================================================
+
             if len(input_seq) > 64:
                 input_seq = input_seq[-64:]
                 
@@ -116,11 +112,7 @@ def get_effort_score(args, user_seq=None):
     device = torch.device("npu:0" if hasattr(torch, "npu") and torch.npu.is_available() else "cuda:0")
     model = model.to(device)
 
-    # =================================================================
-    # 🚀 提速与防错核心 2：彻底拔除 LoRA 硬编码！
-    # 直接注释掉下面这行代码，防止程序去寻找原作者服务器上的非法路径
-    # =================================================================
-    # model = PeftModel.from_pretrained(model, "/storage/xylin/recommendation/LLM/code/alpaca/alpaca-lora-7B/")
+
 
     tokenizer = transformers.LlamaTokenizer.from_pretrained(
         args.base_model,
