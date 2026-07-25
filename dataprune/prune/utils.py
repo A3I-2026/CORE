@@ -45,8 +45,8 @@ def get_args():
     
     # LLM args
     parser.add_argument("--base_model", type=str, default="/storage_fast/rhshui/llm/llama_hf/7B/", help="your path to hf llama model weight")
-    parser.add_argument("--train_data_path", type=str, default="/storage/xylin/LLM4Rec/efficient_tuning/code/DEALRec/data/games/train_49156.json", help="your path of the training data")
-    parser.add_argument("--resume_from_checkpoint", type=str, default="/storage/xylin/recommendation/LLM/code/alpaca/alpaca-lora-7B/", help="path of the alpaca lora adapter")
+    parser.add_argument("--train_data_path", type=str, default="/your/path/CORE/LLM4Rec/efficient_tuning/code/DEALRec/data/games/train_49156.json", help="your path of the training data")
+    parser.add_argument("--resume_from_checkpoint", type=str, default="/your/path/CORE/recommendation/LLM/code/alpaca/alpaca-lora-7B/", help="path of the alpaca lora adapter")
     parser.add_argument("--cutoff_len", default=512, type=int, help="cut off length for LLM input")
     parser.add_argument("--lora_r", default=8, type=int, help="lora r")
     parser.add_argument("--lora_alpha", default=16, help="lora alpha")
