@@ -132,10 +132,8 @@ def run_a_trail(train_config,log_file=None, save_mode=False,save_file=None,need_
     except Exception:
         pass
 
-    # ==========================================
-    # ✅ 修改 1：将 ml-1m 替换为 sports 数据集路径
-    # ==========================================
-    data_dir = "/root/CoLLM-main/CoLLM/collm-datasets/sports/"
+
+    data_dir = "/your/path/CORE/datasets/ml1m/"
     train_data = pd.read_pickle(data_dir+"train_ood2.pkl")[['uid','iid','label']].values
     valid_data = pd.read_pickle(data_dir+"valid_ood2.pkl")[['uid','iid','label']].values
     test_data = pd.read_pickle(data_dir+"test_ood2.pkl")[['uid','iid','label']].values
@@ -262,16 +260,13 @@ def run_a_trail(train_config,log_file=None, save_mode=False,save_file=None,need_
         print("train_config:", train_config, "best result:", early_stop.best_metric, file=log_file)
         log_file.flush()
 
-# ==========================================
-# ✅ 修改 2：重写 main 函数，专门针对 Sports MF 底座
-# ==========================================
 if __name__=='__main__':
     lr_=[1e-3]
     dw_ = [1e-4]
     
     # 维度对齐：填 256，与后续 LLM 配置文件保持绝对一致！
     embedding_size_ = [2048] 
-    save_path_dir = "/root/CoLLM-main/CoLLM/minigpt4rec-log/"
+    save_path_dir = "/your/path/CORE/minigpt4rec-log/"
 
     f=None
     for lr in lr_:
