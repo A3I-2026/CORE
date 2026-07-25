@@ -76,8 +76,8 @@ class model_hyparameters(object):
         self.embed_size = 64
         self.batch_size = 2048
         self.epoch = 5000
-        self.data_path = '/home/zyang/code-2022/RecUnlearn/data/'
-        self.dataset = 'ml-100k' #'yahoo-s622-01' #'yahoo-small2' #'yahooR3-iid-001'
+        self.data_path = 'xxx'
+        self.dataset = 'ml-1m' 
         self.layer_size='[64,64]'
         self.verbose = 1
         self.Ks='[10]'
@@ -507,7 +507,7 @@ if __name__=='__main__':
     dw_ = [1e-4]
     # embedding_size_ = [32, 64, 128, 156, 512]
     embedding_size_ = [64]
-    save_path = "/data/zyang/LLM/PretrainedModels/sasrec/"
+    save_path = "/your/path/CORE/LLM/PretrainedModels/sasrec/"
     # try:
     #     f = open("rec_mf_search_lr"+str(lr_[0])+".log",'rw+')
     # except:
