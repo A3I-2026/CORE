@@ -276,8 +276,7 @@ def run_a_trail(train_config,log_file=None, save_mode=False,save_file=None,need_
     # args.hyper_para_info()
 
     # load dataset
-    # data_dir = "/home/zyang/LLM/MiniGPT-4/dataset/ml-100k/"
-    # data_dir = "/home/sist/zyang/LLM/datasets/ml-100k/"
+
     # train_data = pd.read_pickle(data_dir+"train.pkl")[['uid','iid',"sessionItems",'label']].values
     # valid_data = pd.read_pickle(data_dir+"valid.pkl")[['uid','iid',"sessionItems",'label']].values
     # test_data = pd.read_pickle(data_dir+"test.pkl")[['uid','iid',"sessionItems",'label']].values
@@ -474,8 +473,7 @@ def run_a_trail(train_config,log_file=None, save_mode=False,save_file=None,need_
 #     dw_ = [1e-3]
 #     # embedding_size_ = [32, 64, 128, 156, 512]
 #     embedding_size_ = [64]
-#     save_path = "/data/zyang/LLM/PretrainedModels/sasrec/"
-#     # save_path = "/home/sist/zyang/LLM/PretrainedModels/mf/"
+
 #     # try:
 #     #     f = open("rec_mf_search_lr"+str(lr_[0])+".log",'rw+')
 #     # except:
