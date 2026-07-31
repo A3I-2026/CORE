@@ -72,7 +72,7 @@ from minigpt4.tasks import *
 
 def _dealrec_generate_indices(cfg):
     try:
-        # 1. 动态获取数据集配置 (不再写死 movie_ood)
+     
         dataset_keys = list(cfg.datasets_cfg.keys())
         if not dataset_keys:
             return None
@@ -88,12 +88,11 @@ def _dealrec_generate_indices(cfg):
             if sip is None and hasattr(ds, 'build_info'):
                 sip = getattr(ds.build_info, 'selected_indices_path', None)
             if sip and os.path.isfile(sip):
-                print(f"🎯 检测到 YAML 已配置有效索引文件，跳过后台生成，直接使用: {sip}")
+                print(f"🎯  {sip}")
                 return sip
         except Exception:
             pass
 
-        # 2. 如果走到这里，说明 YAML 没配或者文件不存在，只能自动生成
         try:
             data_dir = ds.path
         except Exception:
@@ -144,7 +143,7 @@ def _dealrec_generate_indices(cfg):
                 except Exception:
                     dname = None
                 if not isinstance(dname, str) or not os.path.isdir(os.path.join(data_root, dname)):
-                    print(f" 严谨版数据集不可用: {dname}")
+                    print(f" unavailable: {dname}")
                 else:
                     cmd = [sys.executable, os.path.join(prune_dir, 'prune.py'),
                            '--data_dir', data_root,
@@ -156,7 +155,7 @@ def _dealrec_generate_indices(cfg):
                            '--iteration', str(int(getattr(ds.dealrec, 'iteration', 1))),
                            '--recursion_depth', str(int(getattr(ds.dealrec, 'recursion_depth', 5000)))
                           ]
-                    print(f"启动严谨版: {' '.join(cmd)}")
+                    print(f": {' '.join(cmd)}")
                     subprocess.run(cmd, cwd=prune_dir, check=True)
                     import torch
                     pt_path = os.path.join(prune_dir, 'selected', f"{dname}_{int(few_shot_size)}.pt")
@@ -171,14 +170,14 @@ def _dealrec_generate_indices(cfg):
                         with open(out_path, 'w', encoding='utf-8') as f:
                             for idx in idxs:
                                 f.write(str(int(idx)) + '\n')
-                        print(f"严谨版动态索引: {out_path}, 大小: {len(idxs)}")
+                        print(f"dynamic indices: {out_path}, size: {len(idxs)}")
                         try:
                             setattr(ds, 'selected_indices_path', out_path)
                         except Exception:
                             pass
                         return out_path
             except Exception as e:
-                print(f" 严谨版失败: {e}")
+                print(f" fail : {e}")
                 
         try:
             uid_col = 'uid'
@@ -233,7 +232,7 @@ def _dealrec_generate_indices(cfg):
                     break
             if len(selected) > int(few_shot_size):
                 selected = selected[:int(few_shot_size)]
-            out_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'DEALRec-main', 'code', 'prune', 'selected')
+            out_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'dataprune', 'prune', 'selected')
             os.makedirs(out_dir, exist_ok=True)
     
             out_name = f"{dataset_key}_auto_indices.txt"
@@ -242,7 +241,7 @@ def _dealrec_generate_indices(cfg):
             with open(out_path, 'w', encoding='utf-8') as f:
                 for idx in selected:
                     f.write(str(int(idx)) + '\n')
-            print(f"已动态生成备用索引文件: {out_path}, 大小: {len(selected)}")
+            print(f"dynamic indices: {out_path},size : {len(selected)}")
             try:
                 setattr(ds, 'selected_indices_path', out_path)
             except Exception:
@@ -257,10 +256,10 @@ def _dealrec_generate_indices(cfg):
 def parse_args():
     parser = argparse.ArgumentParser(description="Training")
 
-    # 支持绝对路径和相对路径，默认使用相对路径
+    
     parser.add_argument("--cfg-path", 
                         default='train_configs/stage1_lora_ml.yaml', 
-                        help="path to configuration file. 可以使用绝对路径或相对路径")
+                        help="path to configuration file.")
     parser.add_argument(
         "--options",
         nargs="+",
@@ -270,7 +269,7 @@ def parse_args():
     )
 
     args = parser.parse_args()
-    print(f"[配置信息] 使用配置文件: {args.cfg_path}")
+    print(f" {args.cfg_path}")
     return args
 
 
@@ -293,48 +292,47 @@ def get_runner_class(cfg):
 
     return runner_cls
 
-# 全局变量用于信号处理
 runner_instance = None
 exit_flag = False
 
 def signal_handler(signum, frame):
     global exit_flag
     signal_name = signal.Signals(signum).name
-    print(f"[信号处理] 收到信号 {signal_name} ({signum})")
+    print(f" {signal_name} ({signum})")
     exit_flag = True
     
-    # 尝试保存检查点
+  
     if runner_instance is not None:
-        print(f"[信号处理] 尝试保存检查点...")
+      
         try:
-            # 使用内部保存方法
+        
             if hasattr(runner_instance, '_save_checkpoint'):
                 current_epoch = getattr(runner_instance, 'current_epoch', 0)
                 runner_instance._save_checkpoint(current_epoch, is_best=False)
             elif hasattr(runner_instance, 'save'):
                 runner_instance.save(tag='signal_interrupted')
-            print(f"[信号处理] 检查点保存成功")
+            print(f"CKPT saved success")
         except Exception as e:
-            print(f"[信号处理] 保存检查点时出错: {str(e)}")
+            print(f"CKPT saved ERROR: {str(e)}")
 
 def main():
-    # 声明使用全局变量
+    
     global runner_instance
     
-    # 注册信号处理器
+
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
-    print("[信号处理] 信号处理器已注册")
+
     
  
     try:
-        os.environ["TMPDIR"] = "/dev/shm"
+        os.environ["TMPDIR"] = "/another/path"
         tempfile.tempdir = os.environ.get("TMPDIR")
         print(f"[临时目录] TMPDIR={os.environ.get('TMPDIR')}")
     except Exception:
         pass
     try:
-        # Ascend 910/910B: 不要同时启用 expandable_segments 与 max_split_size_mb
+       
         default_npu_alloc = "max_split_size_mb:32"
         os.environ["PYTORCH_NPU_ALLOC_CONF"] = os.environ.get("PYTORCH_NPU_ALLOC_CONF", default_npu_alloc)
         os.environ["PYTORCH_CUDA_ALLOC_CONF"] = os.environ.get("PYTORCH_CUDA_ALLOC_CONF", "max_split_size_mb:32")
@@ -351,7 +349,7 @@ def main():
         for _k in ["CUDA_VISIBLE_DEVICES", "CUDA_DEVICE_ORDER", "CUDA_MODULE_LOADING"]:
             if _k in os.environ:
                 os.environ.pop(_k, None)
-        print(f"[环境] ASCEND_VISIBLE_DEVICES={os.environ.get('ASCEND_VISIBLE_DEVICES')}, CUDA_VISIBLE_DEVICES={os.environ.get('CUDA_VISIBLE_DEVICES')}")
+        print(f"ASCEND_VISIBLE_DEVICES={os.environ.get('ASCEND_VISIBLE_DEVICES')}, CUDA_VISIBLE_DEVICES={os.environ.get('CUDA_VISIBLE_DEVICES')}")
     # allow auto-dl completes on main process without timeout when using NCCL backend.
     os.environ["NCCL_BLOCKING_WAIT"] = "1"
     os.environ.setdefault("MASTER_ADDR", "127.0.0.1")
@@ -373,7 +371,7 @@ def main():
                 try:
                     torch.npu.set_device(_i)
                 except Exception as _e:
-                    print(f"[设备预检] 设备{_i}不可用: {_e}")
+              
                     raise
     except Exception:
         pass
@@ -390,9 +388,9 @@ def main():
             _proc_device = torch.device(f'cuda:{_lr}')
         else:
             _proc_device = torch.device('cpu')
-        print(f"[设备绑定] LOCAL_RANK={_lr}, device={_proc_device}")
+        print(f"LOCAL_RANK={_lr}, device={_proc_device}")
     except Exception as _e:
-        print(f"[设备绑定] 失败: {_e}")
+        print(f"fail: {_e}")
 
     setup_seeds(cfg)
 
@@ -404,11 +402,11 @@ def main():
     try:
         outp = None
         if dist.is_available() and dist.is_initialized() and dist.get_world_size() > 1:
-            print("[入口] 分布式模式跳过索引生成，直接进入数据集构建", flush=True)
+            print("continue construct coreset", flush=True)
         else:
             outp = _dealrec_generate_indices(cfg)
             if isinstance(outp, str):
-                print(f"[DEALRec融合] 选样索引: {outp}")
+                print(f"sampling... : {outp}")
     except Exception:
         pass
     task = tasks.setup_task(cfg)
@@ -449,21 +447,21 @@ def main():
     
     try:
         # 添加关键调试信息
-        print(f"[调试信息] 训练配置 - evaluate_only: {runner.evaluate_only}")
-        print(f"[调试信息] 最大训练轮次: {runner.max_epoch}")
-        print(f"[调试信息] 起始训练轮次: {getattr(runner, 'start_epoch', 0)}")
-        print(f"[调试信息] 模型是否需要训练: {runner.model_to_betrained()}")
+        print(f"train config - evaluate_only: {runner.evaluate_only}")
+        print(f"max epoch : {runner.max_epoch}")
+        print(f"start epoch : {getattr(runner, 'start_epoch', 0)}")
+        print(f"need training?: {runner.model_to_betrained()}")
         
         # 检查配置文件中的评估设置
         if hasattr(cfg, 'run_cfg') and hasattr(cfg.run_cfg, 'evaluate'):
-            print(f"[调试信息] 配置中的evaluate标志: {cfg.run_cfg.evaluate}")
+            print(f"evaluate signal: {cfg.run_cfg.evaluate}")
         
         runner.train()
-        print(f"[进程 {get_rank()}] 训练完成!")
+        print(f"[process  {get_rank()}] finished !")
     except KeyboardInterrupt:
-        print(f"[进程 {get_rank()}] 检测到键盘中断，正在退出...")
+        print(f"[process {get_rank()}] keyboard error，exiting...")
     except Exception as e:
-        print(f"[进程 {get_rank()}] 训练过程出错: {str(e)}", file=sys.stderr)
+        print(f"[process {get_rank()}] train ERROR: {str(e)}", file=sys.stderr)
         import traceback
         traceback.print_exc(file=sys.stderr)
     finally:
