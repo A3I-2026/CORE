@@ -1,11 +1,11 @@
 model:
   arch: mini_gpt4rec_v2
   model_type: pretrain_vicuna
-# --- 核心训练控制 ---
+
   use_lora: True          
   freeze_lora: True        
-  freeze_rec: true         # [关键] 冻结底层推荐模型 (MF/LightGCN)
-  freeze_proj: False       # [关键] 解冻 CIE 映射层 (让它适应 LLM)
+  freeze_rec: true         # recommendation model
+  freeze_proj: False       
   max_txt_len: 256
   proj_token_num: 1
   proj_drop: 0.05  #0,"0.1",0.05,0.2,0.3,0.5
@@ -14,13 +14,13 @@ model:
   end_sym: "###"
   #use_grad_ckpt: true
   enable_soft_prompt: true
-    # --- Soft Prompt 配置 ---
+    # --- Soft Prompt ---
   use_text_prompt: True
-  soft_prompt: "soft_prompt_v2" # 随便起个名，触发初始化
-  soft_prompt_len: 20      # 软提示长度
+  soft_prompt: "soft_prompt_v2" 
+  soft_prompt_len: 20     
   freeze_soft_prompt: False 
-  # --- 蒸馏配置 ---
-  distill_weight: 0.15      # 开启蒸馏 Loss
+  # --- distill ---
+  distill_weight: 0.15      
   distill_text: "Analyze the user's history and predict if the user will like the target item."
   prompt_path: "/your/path/CORE/prompts/core_sports.txt"
   llama_model: "/your/path/CORE/minigpt4rec-log/vicuna-7b"
