@@ -70,10 +70,8 @@ class BaseTask:
 
         model_cls = registry.get_model_class(model_config.arch)
         model_kwargs = dict(model_config)
-        # 移除'arch'参数
         if 'arch' in model_kwargs:
             del model_kwargs['arch']
-        # 移除'model_type'参数
         if 'model_type' in model_kwargs:
             del model_kwargs['model_type']
         if 'proj_mid_times' in model_kwargs and 'proj_mid' not in model_kwargs:
@@ -83,7 +81,6 @@ class BaseTask:
         allowed = {k for k in sig.parameters.keys() if k != 'self'}
         model_kwargs = {k: v for k, v in model_kwargs.items() if k in allowed}
 
-        # 使用过滤后的参数实例化模型
         return model_cls(**model_kwargs)
 
     def build_datasets(self, cfg):
@@ -139,7 +136,6 @@ class BaseTask:
         metric_logger = MetricLogger(delimiter="  ")
         header = "Evaluation"
         print_freq = 10
-        # 内存优化：添加定期保存结果的批次大小
         save_batch_size = 1000
         results = []
         temp_results = []
@@ -147,19 +143,16 @@ class BaseTask:
         for i, samples in enumerate(metric_logger.log_every(data_loader, print_freq, header)):
             samples = prepare_sample(samples, cuda_enabled=cuda_enabled)
 
-            # 内存优化：使用上下文管理器确保资源释放
             with torch.no_grad():
                 eval_output = self.valid_step(model=model, samples=samples)
                 
-            # 内存优化：使用临时结果列表并定期清理
             if isinstance(eval_output, list):
                 temp_results.extend(eval_output)
             
-            # 内存优化：定期保存结果并清空临时列表，避免内存累积
             if len(temp_results) >= save_batch_size:
                 results.extend(temp_results)
                 temp_results.clear()
-                # 强制进行垃圾回收
+                
                 import gc, torch
                 gc.collect()
                 try:
@@ -175,9 +168,9 @@ class BaseTask:
                             pass
                 except Exception:
                     pass
-                print(f"[内存优化] 已处理{i+1}批次，清理临时结果内存")
+                print(f"[Memory Optimization] Processed {i+1} batches, cleared temporary result memory.")
             
-            # 内存优化：每处理一定数量的批次就进行一次缓存清理
+            # Memory optimization: Clear cache periodically
             if (i + 1) % (print_freq * 2) == 0:
                 try:
                     if hasattr(torch, 'npu') and torch.npu.is_available():
@@ -186,9 +179,8 @@ class BaseTask:
                         torch.cuda.empty_cache()
                 except Exception:
                     pass
-                print(f"[内存优化] 已处理{i+1}批次，清理CUDA缓存")
+                print(f"[Memory Optimization] Processed {i+1} batches, cleared CUDA cache.")
         
-        # 处理剩余的临时结果
         if temp_results:
             results.extend(temp_results)
             temp_results.clear()
@@ -206,7 +198,7 @@ class BaseTask:
 
         if is_dist_avail_and_initialized():
             dist.barrier()
-            # 分布式环境下额外的内存清理
+            # Additional memory cleanup in distributed environment
             try:
                 try:
                     if hasattr(torch, 'npu') and torch.npu.is_available():
@@ -218,7 +210,7 @@ class BaseTask:
             except Exception:
                 pass
 
-        print(f"[内存优化] 评估完成，总共处理{len(results)}个结果")
+        print(f"[Memory Optimization] Evaluation completed. Processed {len(results)} results in total.")
         return results
 
     def train_epoch(
@@ -294,7 +286,7 @@ class BaseTask:
         When using epoch-based, training stops after one epoch; when using iter-based,
         training stops after #iters_per_epoch iterations.
         """
-        # 设置模型为训练模式
+        # Set model to training mode
         model.train()
         
         use_amp = scaler is not None
@@ -322,14 +314,13 @@ class BaseTask:
             inner_epoch = start_iters // iters_per_epoch
             header = header + "; inner epoch [{}]".format(inner_epoch)
 
-        # 添加更频繁的进度输出
         progress_freq = max(1, log_freq // 5)
         
-        # 记录前几轮的损失值变化，用于调试
+        # Track loss changes for debugging
         prev_loss = None
         valid_steps = 0
         
-        # 内存优化：添加内存监控和清理参数
+        # Memory monitoring and cleanup parameters
         clean_freq = max(1, accum_grad_iters // 2)
         
         for i in range(iters_per_epoch):
@@ -337,15 +328,15 @@ class BaseTask:
             if i >= iters_per_epoch:
                 break
 
-            # 定期打印进度信息
+            # Periodically print progress info
             if i % progress_freq == 0:
-                print(f"[训练进度] Epoch {inner_epoch}, Iteration {i}/{iters_per_epoch}")
+                print(f"[Training Progress] Epoch {inner_epoch}, Iteration {i}/{iters_per_epoch}")
 
             try:
                 samples = next(data_loader)
             except StopIteration:
-                # 内存优化：遇到数据加载器结束时重新初始化
-                print(f"[数据加载器] 遇到StopIteration，重新初始化数据加载器")
+                # Memory optimization: Reinitialize data loader upon StopIteration
+                print(f"[DataLoader] Encountered StopIteration, reinitializing data loader.")
                 break
 
             samples = prepare_sample(samples, cuda_enabled=cuda_enabled)
@@ -359,57 +350,55 @@ class BaseTask:
 
             lr_scheduler.step(cur_epoch=inner_epoch, cur_step=i)
 
-            # 内存优化：更严格的上下文管理
+            # Strict context management for memory optimization
             from contextlib import nullcontext
-            # 未使用AMP时不启用任何autocast，直接用nullcontext
             amp_ctx = (model.maybe_autocast(torch.float16) if (use_amp and hasattr(model, 'maybe_autocast')) else nullcontext())
             with amp_ctx:
                 with torch.set_grad_enabled(True):
-                    # 确保train_step返回一个有效的损失值
                     loss = self.train_step(model=model, samples=samples)
                     
-                    # 检查损失值是否有效
+                    # Ensure loss value is valid
                     if loss is None or torch.isnan(loss):
-                        print(f"[警告] 第{i}次迭代的损失值无效: {loss}")
-                        # 跳过该步的反向，避免因非可导常量导致梯度图断裂
+                        print(f"[Warning] Invalid loss value at iteration {i}: {loss}")
+                        # Skip backward pass to avoid gradient graph fragmentation
                         optimizer.zero_grad(set_to_none=True)
                         torch.cuda.empty_cache()
                         continue
 
-            # after_train_step()
             if use_amp:
                 scaler.scale(loss).backward()
             else:
                 loss.backward()
             
-            # 检查梯度是否有更新
+            # Check gradient updates
             if i % progress_freq == 0:
-                # 检查第一个参数组的梯度范数
+                # Check gradient norm of the first few parameter groups for memory optimization
                 param_norm = 0
-                for param in list(model.parameters())[:10]:  # 内存优化：只检查前10个参数组
+                for param in list(model.parameters())[:10]:  
                     if param.grad is not None:
                         param_norm += param.grad.data.norm(2).item()
                 param_norm = param_norm ** 0.5 if param_norm > 0 else 0
-                print(f"[梯度检查] 第{i}次迭代，梯度范数: {param_norm:.6f}")
+                print(f"[Gradient Check] Iteration {i}, gradient norm: {param_norm:.6f}")
 
-            # 规范更新频率：确保有效的梯度累计间隔不超过本轮迭代数
+            # Standardize update frequency
             effective_accum = min(max(accum_grad_iters, 1), iters_per_epoch)
-            # update gradients every effective_accum iterations，末尾补偿一次
+            
+            # Update gradients every effective_accum iterations with final compensation
             if (i + 1) % effective_accum == 0 or (i + 1) == iters_per_epoch:
                 if use_amp:
                     scaler.step(optimizer)
                     scaler.update()                     
                 else:    
-                    # 梯度裁剪，避免爆炸导致NaN
+                    # Gradient clipping to prevent NaN
                     try:
                         torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
                     except Exception:
                         pass
                     optimizer.step()
                 optimizer.zero_grad()
-                print(f"[优化器更新] 第{i}次迭代，优化器已更新")
+                print(f"[Optimizer Update] Iteration {i}, optimizer updated.")
                 
-                # 内存优化：在优化器更新后立即清理内存
+                # Immediate memory cleanup post-update
                 try:
                     if hasattr(torch, 'npu') and torch.npu.is_available():
                         torch.npu.empty_cache()
@@ -420,7 +409,7 @@ class BaseTask:
                 import gc
                 gc.collect()
             
-            # 内存优化：增加更频繁的缓存清理
+            # More frequent memory cache cleanups
             elif (i + 1) % clean_freq == 0:
                 try:
                     if hasattr(torch, 'npu') and torch.npu.is_available():
@@ -430,11 +419,11 @@ class BaseTask:
                 except Exception:
                     pass
 
-            # 记录并打印损失值，添加更多调试信息
-            current_loss = loss.item()  # 将损失值转换为Python标量，释放计算图
+            # Record loss value to scalar, releasing the computation graph
+            current_loss = loss.item()  
             if prev_loss is not None and i % progress_freq == 0:
                 loss_change = current_loss - prev_loss
-                print(f"[损失变化] 第{i}次迭代，损失值: {current_loss:.6f}, 变化: {loss_change:.6f}")
+                print(f"[Loss Change] Iteration {i}, Loss: {current_loss:.6f}, Change: {loss_change:.6f}")
             prev_loss = current_loss
             
             metric_logger.update(loss=current_loss)
@@ -442,15 +431,15 @@ class BaseTask:
             metric_logger.update(lr=current_lr)
             valid_steps += 1
             
-            # 定期打印详细信息
+            # Print detailed logs periodically
             if i % log_freq == 0:
-                print(f"[详细日志] Epoch {inner_epoch}, Iteration {i}, Loss: {current_loss:.6f}, LR: {current_lr:.6f}")
-                # 内存优化：在日志输出后额外清理一次内存
+                print(f"[Detailed Log] Epoch {inner_epoch}, Iteration {i}, Loss: {current_loss:.6f}, LR: {current_lr:.6f}")
                 torch.cuda.empty_cache()
             
-            # 内存优化：删除不需要的临时变量
+            # Delete temporary variables
             del loss, current_loss
-            # 确保在每次迭代结束时进行缓存清理
+            
+            # Cache cleanup at end of iteration
             try:
                 if hasattr(torch, 'npu') and torch.npu.is_available():
                     torch.npu.empty_cache()
@@ -459,12 +448,11 @@ class BaseTask:
             except Exception:
                 pass
 
-        # after train_epoch()
-        # gather the stats from all processes
         try:
             metric_logger.synchronize_between_processes()
         except Exception:
             pass
+            
         if valid_steps > 0:
             logging.info("Averaged stats: " + str(metric_logger.global_avg()))
             return {
