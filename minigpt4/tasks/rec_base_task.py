@@ -7,6 +7,7 @@
 
 import logging
 import os
+import inspect
 
 import torch
 import torch.distributed as dist
@@ -31,8 +32,6 @@ from sklearn.metrics import roc_auc_score,accuracy_score
 from minigpt4.tasks.base_task import BaseTask
 import time
 import numpy as np
-
-
 
 def uAUC_me(user, predict, label):
     predict = predict.squeeze()
@@ -70,7 +69,6 @@ def uAUC_me(user, predict, label):
             computed_u.append(ui)
         except:
             only_one_class += 1
-            # print("only one class")
         
     auc_for_user = np.array(auc)
     print("computed user:", auc_for_user.shape[0], "can not users:", only_one_class)
@@ -97,15 +95,15 @@ def gather_tensor(tensor, dst=0):
 
 class RecBaseTask(BaseTask):
     def train_step(self, model, samples):
-        # 确保调用模型并返回正确的loss
-        # 这里根据模型的实际实现来调整，确保loss能够正确计算和反向传播
+        # Ensure the model is called and returns the correct loss
+        # Adjust here according to the model's actual implementation to ensure the loss is correctly computed and backpropagated
         output = model(samples)
-        # 确保output是一个字典并且包含loss键
+        # Ensure output is a dictionary and contains the loss key
         if isinstance(output, dict) and 'loss' in output:
             return output['loss']
         else:
-            # 如果模型返回的不是字典或没有loss键，尝试直接使用output作为loss
-            print(f"[警告] 模型返回的不是包含loss的字典，尝试直接使用output作为loss")
+            # If the model does not return a dict or has no loss key, try using output directly as loss
+            print(f"[Warning] Model did not return a dictionary containing loss, attempting to use output directly as loss")
             return output
     
     def valid_step(self, model, samples):
@@ -118,94 +116,26 @@ class RecBaseTask(BaseTask):
         if isinstance(outputs, dict):
             return outputs
         return {"loss": outputs}
-        # raise NotImplementedError
 
     def before_evaluation(self, model, dataset, **kwargs):
         pass
-        # model.before_evaluation(dataset=dataset, task_type=type(self))
 
     def after_evaluation(self, **kwargs):
         val_result = kwargs.get('val_result')
-        # 确保返回结果包含agg_metrics字段，这是Runner中需要的
+        # Ensure the returned result contains the agg_metrics field, which is required by the Runner
         if val_result is not None and 'agg_metrics' not in val_result:
-            # 如果没有agg_metrics，根据loss创建一个
+            # If there is no agg_metrics, create one based on loss
             loss = val_result.get('loss', 0.0)
-            # 使用负loss作为agg_metrics（假设loss越小越好）
+            # Use negative loss as agg_metrics (assuming smaller loss is better)
             val_result['agg_metrics'] = -loss
-            print(f"[任务评估] 在after_evaluation中添加了agg_metrics: {-loss}", flush=True)
+            print(f"[Task Evaluation] Added agg_metrics in after_evaluation: {-loss}", flush=True)
         return val_result
 
     def inference_step(self):
         raise NotImplementedError
 
-    # def evaluation(self, model, data_loaders, cuda_enabled=True):
-    #     model = model.eval()
-    #     metric_logger = MetricLogger(delimiter="  ")
-    #     auc_logger = MetricLogger(delimiter="  ")
-    #     metric_logger.add_meter("loss", SmoothedValue(window_size=1, fmt="{value:.4f}"))
-    #     metric_logger.add_meter("acc", SmoothedValue(window_size=1, fmt="{value:.4f}"))
-    #     auc_logger.add_meter("auc", SmoothedValue(window_size=1, fmt="{value:.4f}"))
-    #     header = "Evaluation"
-    #     # TODO make it configurable
-    #     print_freq = len(data_loaders.loaders[0])//5 #10
-
-    #     results = []
-    #     results_loss = []
-    #     results_logits = []
-    #     labels = []
-    #     k = 0
-    #     use_auc = False
-    #     for data_loader in data_loaders.loaders:
-    #         for samples in metric_logger.log_every(data_loader, print_freq, header):
-    #             # samples = next(data_loader)
-    #             samples = prepare_sample(samples, cuda_enabled=cuda_enabled)
-    #             eval_output = self.valid_step(model=model, samples=samples)
-    #             # results_loss.append(eval_output['loss'].item())
-    #             if 'logits' in eval_output.keys():
-    #                 use_auc = True
-    #                 results_logits.extend(eval_output['logits'].detach().cpu().numpy())
-    #                 labels.extend(samples['label'].detach().cpu().numpy())
-    #                 logits = eval_output['logits']
-    #                 logits[logits==0.5] = 1
-    #                 acc = (logits-samples['label'])
-    #                 acc = (acc==0).sum()/acc.shape[0]
-    #                 metric_logger.update(acc=acc.item())
-    #             else: 
-    #                 metric_logger.update(acc=0)
-    #             # acc = accuracy_score(samples['label'].cpu().numpy().astype(int), logits.astype(int))
-    #             # results.extend(eval_output)
-    #             metric_logger.update(loss=eval_output['loss'].item())
-    #             torch.cuda.empty_cache()
-            
-    #         if use_auc:
-    #             auc = roc_auc_score(labels, results_logits)
-    #             auc_logger.update(auc=auc)
-
-    #         if is_dist_avail_and_initialized():
-    #             dist.barrier()
-
-    #         metric_logger.synchronize_between_processes()
-    #         auc_logger.synchronize_between_processes()
-    #         auc = 0
-    #         # print("Label type......",type(labels),labels)
-    #         if use_auc:
-    #             auc = roc_auc_score(labels, results_logits)
-    #         logging.info("Averaged stats: " + str(metric_logger.global_avg()) + " auc: " + str(auc) + "  global"+ str(auc_logger.global_avg()))
-            
-    #         if use_auc:
-    #             results = {
-    #                 'agg_metrics':auc,
-    #                 'acc': metric_logger.meters['acc'].global_avg,
-    #                 'loss':  metric_logger.meters['loss'].global_avg
-    #             }
-    #         else: # only loss usable
-    #             results = {
-    #                 'agg_metrics': -metric_logger.meters['loss'].global_avg,
-    #             }
-
-    #     return results
     def evaluation(self, model, data_loaders, cuda_enabled=True, max_eval_steps=0, auc_max_samples=0, ndcg_topks=None, hr_topks=None, ndcg_average_mode='all'):
-        print("[任务评估] 开始执行评估流程", flush=True)
+        print("[Task Evaluation] Starting evaluation process", flush=True)
         model = model.eval()
         metric_logger = MetricLogger(delimiter="  ")
         auc_logger = MetricLogger(delimiter="  ")
@@ -255,19 +185,18 @@ class RecBaseTask(BaseTask):
                 iterable = data_loader
             for i, samples in enumerate(iterable):
                 seen_any = True
-                # samples = next(data_loader)
                 samples = prepare_sample(samples, cuda_enabled=cuda_enabled)
-                # 确保调用正确的方法获取评估输出
+                
                 try:
                     import torch as _t
                     with _t.no_grad():
                         eval_output = self.valid_step(model=model, samples=samples)
                         if eval_output is None or 'loss' not in eval_output:
-                            print("[任务评估] valid_step未返回loss，尝试直接调用模型", flush=True)
+                            print("[Task Evaluation] valid_step did not return loss, attempting to call model directly", flush=True)
                             model_output = model(samples)
                             eval_output = {'loss': model_output.get('loss', 0.0)}
                 except Exception as e:
-                    print(f"[任务评估] valid_step执行出错: {str(e)}", flush=True)
+                    print(f"[Task Evaluation] valid_step execution error: {str(e)}", flush=True)
                     try:
                         import torch as _t
                         with _t.no_grad():
@@ -275,13 +204,14 @@ class RecBaseTask(BaseTask):
                     except Exception:
                         model_output = model(samples)
                     eval_output = {'loss': model_output.get('loss', 0.0)}
-                # 累计损失用于稳定跨轮对比
+                
+                # Accumulate loss for stable cross-epoch comparison
                 total_loss += float(eval_output['loss'].item())
                 num_batches += 1
                 if 'logits' in eval_output.keys():
                     use_auc = True
                     import numpy as _np, random as _rand
-                    # 轻量化：立即转CPU的numpy，并做蓄水池采样以限制AUC样本数
+                    # Lightweight: immediately convert to CPU numpy, and perform reservoir sampling to limit the number of AUC samples
                     user_np = _np.asarray(samples['UserID'].detach().cpu().numpy(), dtype=_np.int64)
                     log_np = _np.nan_to_num(eval_output['logits'].detach().cpu().numpy(), nan=0.0, posinf=1.0, neginf=0.0)
                     lab_np = _np.nan_to_num(samples['label'].detach().cpu().numpy(), nan=0.0)
@@ -294,13 +224,13 @@ class RecBaseTask(BaseTask):
                             if total > auc_max_samples:
                                 j = _rand.randint(0, total - 1)
                                 if j < auc_max_samples:
-                                    # 随机替换一个位置，维持固定大小缓冲
+                                    # Randomly replace a position to maintain a fixed-size buffer
                                     k = _rand.randint(0, auc_max_samples - 1)
                                     labels[k] = labels.pop()
                                     results_logits[k] = results_logits.pop()
                                     users[k] = users.pop()
                                 else:
-                                    # 直接丢弃末尾，保持大小
+                                    # Directly discard the end to maintain size
                                     labels.pop()
                                     results_logits.pop()
                                     users.pop()
@@ -310,8 +240,7 @@ class RecBaseTask(BaseTask):
                     metric_logger.update(acc=acc.item())
                 else: 
                     metric_logger.update(acc=0)
-                # acc = accuracy_score(samples['label'].cpu().numpy().astype(int), logits.astype(int))
-                # results.extend(eval_output)
+                
                 metric_logger.update(loss=eval_output['loss'].item())
                 if not hasattr(data_loader, "__len__") and (i % print_freq == 0):
                     print(f"{header} [{i}/?] {metric_logger}")
@@ -325,16 +254,19 @@ class RecBaseTask(BaseTask):
                 logits_np_local = _np.nan_to_num(_np.asarray(results_logits, dtype=_np.float32), nan=0.0, posinf=1.0, neginf=0.0)
                 labels_np_local = _np.nan_to_num(_np.asarray(labels, dtype=_np.float32), nan=0.0)
                 users_np_local = _np.asarray(users, dtype=_np.int64)
-                # 分布式聚合，确保所有 rank 使用同一批评估样本计算指标
+                
+                # Distributed aggregation to ensure all ranks use the same batch of evaluation samples for metric computation
                 if is_dist_avail_and_initialized() and get_world_size() > 1:
                     import torch as _t
                     dev = _t.device("npu:"+str(_t.npu.current_device())) if hasattr(_t, 'npu') and _t.npu.is_available() else _t.device('cpu')
-                    # 先聚合各 rank 的长度，计算最大长度
+                    
+                    # First aggregate the lengths from each rank to calculate the maximum length
                     n_local = _t.tensor([len(logits_np_local)], device=dev, dtype=_t.int64)
                     sizes = [_t.empty_like(n_local) for _ in range(get_world_size())]
                     dist.all_gather(sizes, n_local)
                     max_len = int(_t.max(_t.stack(sizes)).item())
-                    # 构造 padding 后的张量与掩码
+                    
+                    # Construct padded tensors and masks
                     def _pad(arr, length, fill):
                         t = _t.tensor(arr, device=dev)
                         if t.numel() < length:
@@ -345,7 +277,8 @@ class RecBaseTask(BaseTask):
                     t_labels = _pad(labels_np_local, max_len, -1.0)
                     t_users  = _pad(users_np_local,  max_len, -1)
                     mask = _pad([1.0]*len(logits_np_local), max_len, 0.0)
-                    # all_gather 固定长度后再拼接
+                    
+                    # all_gather after fixing length, then concatenate
                     g_logits = [_t.empty_like(t_logits) for _ in range(get_world_size())]
                     g_labels = [_t.empty_like(t_labels) for _ in range(get_world_size())]
                     g_users  = [_t.empty_like(t_users)  for _ in range(get_world_size())]
@@ -358,7 +291,8 @@ class RecBaseTask(BaseTask):
                     t_labels = _t.cat(g_labels, dim=0).to('cpu')
                     t_users  = _t.cat(g_users,  dim=0).to('cpu')
                     t_masks  = _t.cat(g_masks,  dim=0).to('cpu')
-                    # 去掉 padding
+                    
+                    # Remove padding
                     keep = t_masks > 0.5
                     logits_np_local = t_logits[keep].numpy()
                     labels_np_local = t_labels[keep].numpy()
@@ -442,7 +376,7 @@ class RecBaseTask(BaseTask):
                         acc_opt = 0.0
                         acc_thr = 0.5
                 except Exception as e:
-                    logging.error(f"计算AUC时出错: {e}")
+                    logging.error(f"Error computing AUC: {e}")
                     auc = 0.0
                     uauc = 0.0
             try:
@@ -486,7 +420,7 @@ class RecBaseTask(BaseTask):
                         'max': int(counts.max()),
                     }
                 if is_main_process():
-                    print(f"[验证用户分布] soft_prompt_bank候选桶统计: {stats}", flush=True)
+                    print(f"[Validation User Distribution] soft_prompt_bank candidate bucket statistics: {stats}", flush=True)
             except Exception:
                 pass
 
@@ -498,113 +432,6 @@ class RecBaseTask(BaseTask):
         if results is None:
             results = {'agg_metrics': 0.0, 'acc': 0.0, 'loss': 0.0, 'uauc': 0.0}
         return results
-
-# class RecBaseTask:
-#     def __init__(self, **kwargs):
-#         super().__init__()
-
-#         self.inst_id_key = "instance_id"
-
-#     @classmethod
-#     def setup_task(cls, **kwargs):
-#         return cls()
-
-#     def build_model(self, cfg):
-#         model_config = cfg.model_cfg
-
-#         model_cls = registry.get_model_class(model_config.arch)
-#         return model_cls.from_config(model_config)
-
-#     def build_datasets(self, cfg):
-#         """
-#         Build a dictionary of datasets, keyed by split 'train', 'valid', 'test'.
-#         Download dataset and annotations automatically if not exist.
-
-#         Args:
-#             cfg (common.config.Config): _description_
-
-#         Returns:
-#             dict: Dictionary of torch.utils.data.Dataset objects by split.
-#         """
-
-#         datasets = dict()
-
-#         datasets_config = cfg.datasets_cfg
-
-#         assert len(datasets_config) > 0, "At least one dataset has to be specified."
-
-#         for name in datasets_config:
-#             dataset_config = datasets_config[name]
-
-#             builder = registry.get_builder_class(name)(dataset_config)
-#             dataset = builder.build_datasets()
-
-#             dataset['train'].name = name
-#             if 'sample_ratio' in dataset_config:
-#                 dataset['train'].sample_ratio = dataset_config.sample_ratio
-
-#             datasets[name] = dataset
-
-#         return datasets
-
-#     def train_step(self, model, samples):
-#         loss = model(samples)["loss"]
-#         return loss
-
-#     def valid_step(self, model, samples):
-#         outputs = model.generate(samples)
-#         return outputs
-#         # raise NotImplementedError
-
-#     def before_evaluation(self, model, dataset, **kwargs):
-#         model.before_evaluation(dataset=dataset, task_type=type(self))
-
-#     def after_evaluation(self, **kwargs):
-#         pass
-
-#     def inference_step(self):
-#         raise NotImplementedError
-
-#     def evaluation(self, model, data_loader, cuda_enabled=True):
-#         metric_logger = MetricLogger(delimiter="  ")
-#         metric_logger.add_meter("loss", SmoothedValue(window_size=1, fmt="{value:.4f}"))
-#         metric_logger.add_meter("acc", SmoothedValue(window_size=1, fmt="{value:.4f}"))
-#         header = "Evaluation"
-#         # TODO make it configurable
-#         print_freq = 10
-
-#         results = []
-#         results_loss = []
-#         results_logits = []
-#         labels = []
-
-#         for samples in metric_logger.log_every(data_loader, print_freq, header):
-            
-#             samples = prepare_sample(samples, cuda_enabled=cuda_enabled)
-#             eval_output = self.valid_step(model=model, samples=samples)
-#             results_loss.extend(eval_output['loss'])
-#             results_logits.append(eval_output['logits'])
-#             labels.append(samples['label'])
-#             logits = eval_output['logits'].detach().cpu().numpy()
-#             logits[logits>=0.5] = 1
-#             acc = accuracy_score(samples['label'].cpu().numpy(), logits.int())
-#             # results.extend(eval_output)
-#             metric_logger.update(loss=eval_output['loss'].item())
-#             metric_logger.update(acc=acc)
-
-
-#         if is_dist_avail_and_initialized():
-#             dist.barrier()
-
-#         metric_logger.synchronize_between_processes()
-#         auc = roc_auc_score(torch.cat(labels).detach().cpu().numpy(),torch.cat(results_logits).detach().cpu().numpy())
-#         logging.info("Averaged stats: " + str(metric_logger.global_avg()) + "auc: " + str(auc))
-#         results = {
-#             'loss': torch.cat(results_loss).mean().item(),
-#             'auc': auc
-#         }
-
-#         return results
 
     def train_epoch(
         self,
@@ -704,13 +531,13 @@ class RecBaseTask(BaseTask):
             inner_epoch = start_iters // iters_per_epoch
             header = header + "; inner epoch [{}]".format(inner_epoch)
 
-        # 设置更频繁的日志输出频率，确保日志输出更频繁，方便调试
+        # Set a more frequent log output frequency to ensure more frequent logging for easier debugging
         progress_output_freq = max(2, log_freq // 5)
         
-        # 记录训练开始日志，明确显示关键参数
+        # Log training start, clearly showing key parameters
         if is_main_process():
-            print(f"[训练开始] Epoch {inner_epoch}, 总迭代次数: {iters_per_epoch}, log_freq: {log_freq}, progress_output_freq: {progress_output_freq}")
-            print(f"[重要提示] 日志将每{progress_output_freq}次迭代输出一次，确保训练过程可见")
+            print(f"[Training Start] Epoch {inner_epoch}, Total iterations: {iters_per_epoch}, log_freq: {log_freq}, progress_output_freq: {progress_output_freq}")
+            print(f"[Important] Logs will be output every {progress_output_freq} iterations to ensure training progress is visible")
             logging.info(f"Start training epoch {inner_epoch}, total iterations: {iters_per_epoch}, log frequency: {log_freq}, progress frequency: {progress_output_freq}")
         
         for i in range(iters_per_epoch):
@@ -718,18 +545,18 @@ class RecBaseTask(BaseTask):
             if i >= iters_per_epoch:
                 break
 
-            # 调试：在抓取首个批次前后打印，定位阻塞点
+            # Debug: print before and after fetching the first batch to locate blocking points
             if i == 0 and is_main_process():
-                print("[调试] 准备抓取第一个batch")
+                print("[Debug] Preparing to fetch the first batch")
             samples = next(data_loader)
             if i == 0 and is_main_process():
-                print("[调试] 第一个batch抓取完成")
+                print("[Debug] First batch fetched successfully")
 
             if i == 0 and is_main_process():
-                print("[调试] 准备将样本迁移到CUDA")
+                print("[Debug] Preparing to move samples to CUDA")
             samples = prepare_sample(samples, cuda_enabled=True)
             if i == 0 and is_main_process():
-                print("[调试] 样本迁移到CUDA完成")
+                print("[Debug] Samples moved to CUDA successfully")
             samples.update(
                 {
                     "epoch": inner_epoch,
@@ -741,8 +568,8 @@ class RecBaseTask(BaseTask):
             lr_scheduler.step(cur_epoch=inner_epoch, cur_step=i)
 
             if i == 0 and is_main_process():
-                print("[调试] 进入train_step前")
-                # 打印一次可训练参数，确认优化器范围
+                print("[Debug] Before entering train_step")
+                # Print trainable parameters once to confirm optimizer scope
                 try:
                     inner_m = getattr(model, 'module', model)
                     print("\n[Debug] Inspecting Trainable Parameters:")
@@ -755,9 +582,9 @@ class RecBaseTask(BaseTask):
                 except Exception:
                     pass
             from contextlib import nullcontext
-            # 兼容 DDP 包装，优先从 module 取 maybe_autocast
+            # Compatible with DDP wrapper, prioritize getting maybe_autocast from module
             maybe_ctx = None
-            if scaler is not None:  # 使用 AMP 时才尝试 autocast
+            if scaler is not None:
                 try:
                     inner = getattr(model, 'module', model)
                     if hasattr(inner, 'maybe_autocast'):
@@ -768,14 +595,13 @@ class RecBaseTask(BaseTask):
             with amp_ctx:
                 loss = self.train_step(model=model, samples=samples)
             if i == 0 and is_main_process():
-                print("[调试] train_step完成")
+                print("[Debug] train_step completed")
 
-            # after_train_step()
             if use_amp:
                 scaler.scale(loss).backward()
             else:
                 loss.backward()
-            # 检查 Soft Prompt 是否有梯度
+            # Check if Soft Prompt has gradients
             if is_main_process():
                 try:
                     inner_m = inner if 'inner' in locals() else model
@@ -787,10 +613,10 @@ class RecBaseTask(BaseTask):
                 except Exception:
                     pass
 
-            # 规范累计间隔与末尾补偿，确保每轮至少更新一次
+            # Standardize accumulation interval and end compensation to ensure at least one update per epoch
             effective_accum = min(max(accum_grad_iters, 1), iters_per_epoch)
             if (i + 1) % effective_accum == 0 or (i + 1) == iters_per_epoch:
-                # 梯度清理：将所有可训练参数的梯度中的 NaN/Inf 转为 0，避免优化器被无效梯度影响
+                # Gradient cleaning: convert NaN/Inf in gradients of all trainable parameters to 0 to prevent the optimizer from being affected by invalid gradients
                 try:
                     for p in (inner.parameters() if 'inner' in locals() else model.parameters()):
                         if p.grad is not None:
@@ -800,7 +626,7 @@ class RecBaseTask(BaseTask):
                                 pass
                 except Exception:
                     pass
-                # 在清零之前打印梯度范数，避免总是0
+                # Print gradient norm before zeroing to avoid always seeing 0
                 if is_main_process():
                     try:
                         gnorm = 0.0
@@ -810,7 +636,7 @@ class RecBaseTask(BaseTask):
                                     gnorm += float(torch.nan_to_num(p.grad.data, nan=0.0, posinf=0.0, neginf=0.0).norm(2).item())
                                 except Exception:
                                     pass
-                        print(f"[梯度范数] 第{i}次迭代，gnorm: {gnorm:.6f}")
+                        print(f"[Gradient Norm] Iteration {i}, gnorm: {gnorm:.6f}")
                     except Exception:
                         pass
                 if use_amp:
@@ -831,29 +657,27 @@ class RecBaseTask(BaseTask):
                     optimizer.step()
                 optimizer.zero_grad()
                 if is_main_process():
-                    print(f"[优化器更新] 第{i}次迭代，优化器已更新")
+                    print(f"[Optimizer Update] Iteration {i}, optimizer updated")
 
             metric_logger.update(loss=loss.item())
             metric_logger.update(lr=optimizer.param_groups[0]["lr"])
             
-            # 添加更频繁的进度日志输出
+            # Add more frequent progress log output
             if i % progress_output_freq == 0 or i == iters_per_epoch - 1:
-                # 确保只有主进程输出日志，避免重复
+                # Ensure only the main process outputs logs to avoid duplication
                 if is_main_process():
-                    # 计算进度百分比
+                    # Calculate progress percentage
                     progress_percent = (i + 1) / iters_per_epoch * 100
-                    # 使用print和logging双重输出，确保在控制台和日志文件中都能看到
+                    # Use both print and logging to ensure visibility in both console and log files
                     progress_str = f"[TRAIN] Epoch {inner_epoch}, Iter {i+1}/{iters_per_epoch} ({progress_percent:.1f}%), Loss: {loss.item():.4f}, LR: {optimizer.param_groups[0]['lr']:.6f}"
                     print(progress_str)
                     logging.info(progress_str)
             
-            # 保持原始的metric日志输出（去除对不可用display的调用）
+            # Keep the original metric log output (remove calls to unavailable displays)
             if i % log_freq == 0:
                 if is_main_process():
                     logging.info(f"[METRIC] {header} [{i}/{iters_per_epoch}] {metric_logger}")
 
-        # after train_epoch()
-        # gather the stats from all processes
         try:
             import torch.distributed as _dist
             if _dist.is_available() and _dist.is_initialized():
@@ -867,43 +691,3 @@ class RecBaseTask(BaseTask):
             k: "{:.3f}".format(meter.global_avg)
             for k, meter in metric_logger.meters.items()
         }
-
-#     @staticmethod
-#     def save_result(result, result_dir, filename, remove_duplicate=""):
-#         import json
-
-#         result_file = os.path.join(
-#             result_dir, "%s_rank%d.json" % (filename, get_rank())
-#         )
-#         final_result_file = os.path.join(result_dir, "%s.json" % filename)
-
-#         json.dump(result, open(result_file, "w"))
-
-#         if is_dist_avail_and_initialized():
-#             dist.barrier()
-
-#         if is_main_process():
-#             logging.warning("rank %d starts merging results." % get_rank())
-#             # combine results from all processes
-#             result = []
-
-#             for rank in range(get_world_size()):
-#                 result_file = os.path.join(
-#                     result_dir, "%s_rank%d.json" % (filename, rank)
-#                 )
-#                 res = json.load(open(result_file, "r"))
-#                 result += res
-
-#             if remove_duplicate:
-#                 result_new = []
-#                 id_list = []
-#                 for res in result:
-#                     if res[remove_duplicate] not in id_list:
-#                         id_list.append(res[remove_duplicate])
-#                         result_new.append(res)
-#                 result = result_new
-
-#             json.dump(result, open(final_result_file, "w"))
-#             print("result file saved to %s" % final_result_file)
-
-#         return final_result_file
