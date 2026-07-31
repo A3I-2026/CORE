@@ -87,7 +87,7 @@ def train(
     )
     assert (
         base_model
-    ), "Please specify a --base_model, e.g. --base_model='decapoda-research/llama-7b-hf'"
+    ), "Please specify a --base_model, e.g. --base_model='xxx/llama-7b-hf'"
     gradient_accumulation_steps = batch_size // micro_batch_size
     # print(f"gradient_accumulation_steps: {gradient_accumulation_steps}")
 
