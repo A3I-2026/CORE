@@ -3,7 +3,7 @@ accelerate config
 dataset=$1
 fewshot=1024
 
-# generate data for LLM-based recommender models (BIGRec)
+
 cd data/
 sh gen_fewshot.sh $dataset $fewshot
 cd ../
