@@ -9,86 +9,7 @@ from minigpt4.datasets.builders.rec_base_dataset_builder import RecBaseDatasetBu
 
 from minigpt4.datasets.datasets.rec_datasets import MovielensDataset, MovielensDataset_stage1, AmazonDataset, MoiveOOData, MoiveOOData_sasrec, AmazonOOData, AmazonOOData_sasrec
 
-# @registry.register_builder("movielens")
-# class MovielensBuilder(RecBaseDatasetBuilder):
-#     train_dataset_cls = MovielensDataset
 
-#     DATASET_CONFIG_DICT = {
-#         "default": "configs/datasets/movielens/default.yaml",
-#     }
-
-#     def build_datasets(self):
-#         # at this point, all the annotations and image/videos should be all downloaded to the specified locations.
-#         logging.info("Building datasets...")
-#         self.build_processors()
-
-#         build_info = self.config.build_info
-#         storage_path = build_info.storage
-
-#         datasets = dict()
-
-#         if not os.path.exists(storage_path):
-#             warnings.warn("storage path {} does not exist.".format(storage_path))
-
-#         # create datasets
-#         dataset_cls = self.train_dataset_cls
-#         datasets['train'] = dataset_cls(
-#             text_processor=self.text_processors["train"],
-#             ann_paths=[os.path.join(storage_path, 'train')],
-#         )
-#         try:
-#             datasets['valid'] = dataset_cls(
-#             text_processor=self.text_processors["train"],
-#             ann_paths=[os.path.join(storage_path, 'valid_small2')])
-#             datasets['test'] = dataset_cls(
-#             text_processor=self.text_processors["train"],
-#             ann_paths=[os.path.join(storage_path, 'test')])
-#         except:
-#             pass
-
-        
-
-#         return datasets
-
-# @registry.register_builder("amazon")
-# class AmazonBuilder(RecBaseDatasetBuilder):
-#     train_dataset_cls = AmazonDataset
-
-#     DATASET_CONFIG_DICT = {
-#         "default": "configs/datasets/amazon/default.yaml",
-#     }
-
-#     def build_datasets(self):
-#         # at this point, all the annotations and image/videos should be all downloaded to the specified locations.
-#         logging.info("Building datasets...")
-#         self.build_processors()
-
-#         build_info = self.config.build_info
-#         storage_path = build_info.storage
-
-#         datasets = dict()
-
-#         if not os.path.exists(storage_path):
-#             warnings.warn("storage path {} does not exist.".format(storage_path))
-
-#         # create datasets
-#         dataset_cls = self.train_dataset_cls
-#         datasets['train'] = dataset_cls(
-#             text_processor=self.text_processors["train"],
-#             ann_paths=[os.path.join(storage_path, 'train')],
-#         )
-#         try:
-#             datasets['valid'] = dataset_cls(
-#             text_processor=self.text_processors["train"],
-#             ann_paths=[os.path.join(storage_path, 'valid_small')])
-#             #0915
-#             datasets['test'] = dataset_cls(
-#             text_processor=self.text_processors["train"],
-#             ann_paths=[os.path.join(storage_path, 'test')])
-#         except:
-#             print(os.path.join(storage_path, 'valid_small'), os.path.exists(os.path.join(storage_path, 'valid_small_seqs.pkl')))
-#             raise FileNotFoundError("file not found.")
-#         return datasets
 
 
 @registry.register_builder("movie_ood")
@@ -146,8 +67,8 @@ class MoiveOODBuilder(RecBaseDatasetBuilder):
         try:
             ds = datasets['train']
             if hasattr(ds, 'annotation'):
-                logging.info(f"[DEALRec融合] movie_ood train size after fusion: {len(ds.annotation)}")
-                print(f"[DEALRec融合] movie_ood 训练集样本数: {len(ds.annotation)}")
+                logging.info(f" movie_ood train size after fusion: {len(ds.annotation)}")
+                print(f" movie_ood Number of training samples: {len(ds.annotation)}")
         except Exception:
             pass
         try:
@@ -235,8 +156,8 @@ class MoiveOODBuilder_sasrec(RecBaseDatasetBuilder):
         try:
             ds = datasets['train']
             if hasattr(ds, 'annotation'):
-                logging.info(f"[DEALRec融合] movie_ood_sasrec train size after fusion: {len(ds.annotation)}")
-                print(f"[DEALRec融合] movie_ood_sasrec 训练集样本数: {len(ds.annotation)}")
+                logging.info(f"movie_ood_sasrec train size after fusion: {len(ds.annotation)}")
+                print(f" movie_ood_sasrec Number of training samples: {len(ds.annotation)}")
         except Exception:
             pass
         try:
@@ -312,8 +233,8 @@ class AmazonOODBuilder(RecBaseDatasetBuilder):
         try:
             ds = datasets['train']
             if hasattr(ds, 'annotation'):
-                logging.info(f"[DEALRec融合] amazon_ood train size after fusion: {len(ds.annotation)}")
-                print(f"[DEALRec融合] amazon_ood 训练集样本数: {len(ds.annotation)}")
+                logging.info(f" amazon_ood train size after fusion: {len(ds.annotation)}")
+                print(f"[ amazon_ood Number of training samples: {len(ds.annotation)}")
         except Exception:
             pass
         try:
