@@ -1,9 +1,3 @@
-"""
- Copyright (c) 2022, salesforce.com, inc.
- All rights reserved.
- SPDX-License-Identifier: BSD-3-Clause
- For full license text, see the LICENSE_Lavis file in the repo root or https://opensource.org/licenses/BSD-3-Clause
-"""
 
 import logging
 import os
@@ -124,9 +118,6 @@ class BaseModel(nn.Module):
 
 
 class BaseEncoder(nn.Module):
-    """
-    Base class for primitive encoders, such as ViT, TimeSformer, etc.
-    """
 
     def __init__(self):
         super().__init__()
