@@ -163,7 +163,7 @@ def _dealrec_generate_indices(cfg):
                         idxs = torch.load(pt_path)
                         out_dir = os.path.join(prune_dir, 'selected')
                         os.makedirs(out_dir, exist_ok=True)
-                   
+                    
                         out_name = f"{dataset_key}_auto_indices.txt"
                         out_path = os.path.join(out_dir, out_name)
                         
@@ -326,9 +326,10 @@ def main():
     
  
     try:
-        os.environ["TMPDIR"] = "/another/path"
+        os.environ["TMPDIR"] = "./tmp"
+        os.makedirs(os.environ["TMPDIR"], exist_ok=True)
         tempfile.tempdir = os.environ.get("TMPDIR")
-        print(f"[临时目录] TMPDIR={os.environ.get('TMPDIR')}")
+        print(f"[Temp Directory] TMPDIR={os.environ.get('TMPDIR')}")
     except Exception:
         pass
     try:
@@ -336,7 +337,7 @@ def main():
         default_npu_alloc = "max_split_size_mb:32"
         os.environ["PYTORCH_NPU_ALLOC_CONF"] = os.environ.get("PYTORCH_NPU_ALLOC_CONF", default_npu_alloc)
         os.environ["PYTORCH_CUDA_ALLOC_CONF"] = os.environ.get("PYTORCH_CUDA_ALLOC_CONF", "max_split_size_mb:32")
-        print(f"[NPU内存] PYTORCH_NPU_ALLOC_CONF={os.environ.get('PYTORCH_NPU_ALLOC_CONF')}")
+        print(f"[NPU Memory] PYTORCH_NPU_ALLOC_CONF={os.environ.get('PYTORCH_NPU_ALLOC_CONF')}")
     except Exception:
         pass
     try:
@@ -446,73 +447,73 @@ def main():
     runner_instance = runner
     
     try:
-        # 添加关键调试信息
+        # Add key debugging information
         print(f"train config - evaluate_only: {runner.evaluate_only}")
         print(f"max epoch : {runner.max_epoch}")
         print(f"start epoch : {getattr(runner, 'start_epoch', 0)}")
         print(f"need training?: {runner.model_to_betrained()}")
         
-        # 检查配置文件中的评估设置
+        # Check evaluation settings in config
         if hasattr(cfg, 'run_cfg') and hasattr(cfg.run_cfg, 'evaluate'):
             print(f"evaluate signal: {cfg.run_cfg.evaluate}")
         
         runner.train()
-        print(f"[process  {get_rank()}] finished !")
+        print(f"[Process  {get_rank()}] finished !")
     except KeyboardInterrupt:
-        print(f"[process {get_rank()}] keyboard error，exiting...")
+        print(f"[Process {get_rank()}] keyboard error, exiting...")
     except Exception as e:
-        print(f"[process {get_rank()}] train ERROR: {str(e)}", file=sys.stderr)
+        print(f"[Process {get_rank()}] train ERROR: {str(e)}", file=sys.stderr)
         import traceback
         traceback.print_exc(file=sys.stderr)
     finally:
-        # 清理分布式环境
+        # Clean up distributed environment
         if dist.is_available() and dist.is_initialized():
             try:
                 dist.destroy_process_group()
-                print(f"[进程 {get_rank()}] 分布式进程组已销毁")
+                print(f"[Process {get_rank()}] Distributed process group destroyed")
             except Exception as e:
-                print(f"[进程 {get_rank()}] 销毁分布式进程组时出错: {str(e)}")
+                print(f"[Process {get_rank()}] Error destroying distributed process group: {str(e)}")
         
         if hasattr(torch, "npu"):
             try:
                 torch.npu.empty_cache()
-                print(f"[进程 {get_rank()}] NPU内存已清理")
+                print(f"[Process {get_rank()}] NPU memory cleared")
             except Exception:
                 pass
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
-            print(f"[进程 {get_rank()}] GPU内存已清理")
+            print(f"[Process {get_rank()}] GPU memory cleared")
 
 
 if __name__ == "__main__":
-    # 优先设置启动方式，避免在初始化过程中触发 forkserver 导致管理器连接失败
+    # Prioritize setting start method to avoid forkserver triggering connection failures during initialization
     try:
         mp.set_start_method('spawn', force=True)
-        print('[进程] 启用spawn启动方式')
+        print('[Process] Enabled spawn start method')
     except Exception as _e:
-        print(f'[进程] 设置spawn失败: {_e}')
+        print(f'[Process] Failed to set spawn: {_e}')
 
-    # 再次注册信号处理器确保生效
+    # Register signal handlers again to ensure they take effect
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
-    print("[主入口] 信号处理器已注册")
+    print("[Main Entry] Signal handlers registered")
     
     try:
         main()
     except Exception as e:
-        print(f"[主入口] 主函数出错: {str(e)}")
+        print(f"[Main Entry] Main function error: {str(e)}")
         import traceback
         traceback.print_exc()
     finally:
-        # 最后的清理工作
-        print(f"[主入口] 执行最后的清理工作")
+        # Final cleanup
+        print(f"[Main Entry] Executing final cleanup")
         if runner_instance is not None:
             try:
-                print(f"[主入口] 尝试最终保存检查点...")
+                print(f"[Main Entry] Attempting to save final checkpoint...")
                 if hasattr(runner_instance, '_save_checkpoint'):
                     current_epoch = getattr(runner_instance, 'current_epoch', 0)
                     runner_instance._save_checkpoint(current_epoch, is_best=False)
-                print(f"[主入口] 最终检查点保存成功")
+                print(f"[Main Entry] Final checkpoint saved successfully")
             except Exception as e:
-                print(f"[主入口] 保存最终检查点时出错: {str(e)}")
-        print(f"[主入口] 程序已退出")
+                print(f"[Main Entry] Error saving final checkpoint: {str(e)}")
+        print(f"[Main Entry] Program exited")
