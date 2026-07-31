@@ -120,7 +120,7 @@ def run_a_trail(train_config,log_file=None, save_mode=False,save_file=None,need_
 
     # load dataset
 
-    data_dir = "/your/path/CORE/datasets/amazon_book_new/"
+    data_dir = "/your/path/CORE/datasets/amazon_book/"
     train_data = pd.read_pickle(data_dir+"train_ood2.pkl")[['uid','iid','label']].values
     valid_data = pd.read_pickle(data_dir+"valid_ood2.pkl")[['uid','iid','label']].values
     # valid_data = pd.read_pickle(data_dir+"valid_ood2.pkl")[['uid','iid','label','not_cold']]
@@ -269,71 +269,7 @@ def run_a_trail(train_config,log_file=None, save_mode=False,save_file=None,need_
         print("train_config:", train_config, "best result:", early_stop.best_metric, file=log_file)
         log_file.flush()
 
-# if __name__=='__main__':
-#     # lr_ = [1e-1,1e-2,1e-3]
-#     lr_=[1e-4]
-#     dw_ = [1e-2,1e-3,1e-4,1e-5,1e-6,1e-7]
-#     # embedding_size_ = [32, 64, 128, 156, 512]
-#     embedding_size_ = [64,128,256]
-#     try:
-#         f = open("0923amazon-book-new-ood-v2-mf_search_lr"+str(lr_[0])+".log",'rw+')
-#     except:
-#         f = open("0923amazon-book-new-ood-v2-mf_search_lr"+str(lr_[0])+".log",'w+')
-#     for lr in lr_:
-#         for wd in dw_:
-#             for embedding_size in embedding_size_:
-#                 train_config={
-#                     'lr': lr,
-#                     'wd': wd,
-#                     'embedding_size': embedding_size,
-#                     "epoch": 5000,
-#                     "eval_epoch":1,
-#                     "patience":100,
-#                     "batch_size": 2048*5
-#                 }
-#                 print(train_config)
-#                 run_a_trail(train_config=train_config, log_file=f, save_mode=False)
-#     f.close()
 
-
-
-# {'lr': 0.001, 'wd': 0.0001, 'embedding_size': 256, 'epoch': 5000, 'eval_epoch': 1, 'patience': 100, 'batch_size': 2048},
-#  {'valid_auc': 0.6760080227104877, 'valid_uauc': 0.6191863368703151, 'test_auc': 0.6482002627476354, 'test_uauc': 0.636100123360848, 'epoch': 465}
-# save version....
-# if __name__=='__main__':
-#     # lr_ = [1e-1,1e-2,1e-3]
-#     lr_=[1e-3] #1e-2
-#     dw_ = [1e-6]
-#     # embedding_size_ = [32, 64, 128, 156, 512]
-#     embedding_size_ = [256]
-
-#     # try:
-#     #     f = open("rec_mf_search_lr"+str(lr_[0])+".log",'rw+')
-#     # except:
-#     #     f = open("rec_mf_search_lr"+str(lr_[0])+".log",'w+')
-#     f=None
-#     for lr in lr_:
-#         for wd in dw_:
-#             for embedding_size in embedding_size_:
-#                 train_config={
-#                     'lr': lr,
-#                     'wd': wd,
-#                     'embedding_size': embedding_size,
-#                     "epoch": 5000,
-#                     "eval_epoch":1,
-#                     "patience":100,
-#                     "batch_size":2048*5
-#                 }
-#                 print(train_config)
-#                 save_path += "0923_book_oodv2_best_model_d" + str(embedding_size)+ 'lr-'+ str(lr) + "wd"+str(wd) + ".pth"
-#                 print("save path: ", save_path)
-#                 run_a_trail(train_config=train_config, log_file=f, save_mode=True,save_file=save_path)
-#     f.close()
-
-
-
-
-# with prtrain version:
 if __name__=='__main__':
     # lr_ = [1e-1,1e-2,1e-3]
     lr_=[1e-3] #1e-2
@@ -360,12 +296,8 @@ if __name__=='__main__':
                 }
                 print(train_config)
 
-                save_path = "/data/zyang/LLM/PretrainedModels/mf/0923_book_oodv2_best_model_d256lr-0.001wd1e-06.pth"
-                # if os.path.exists(save_path + "0912_ml100k_oodv2_best_model_d" + str(embedding_size)+ 'lr-'+ str(lr) + "wd"+str(wd) + ".pth"):
-                #     save_path += "0912_ml100k_oodv2_best_model_d" + str(embedding_size)+ 'lr-'+ str(lr) + "wd"+str(wd) + ".pth"
-                #     print(save_path)
-                # else:
-                #     save_path += "best_model_d" + str(embedding_size) + ".pth"
+                save_path = "/your/path/LLM/PretrainedModels/mf/book_oodv2_best_model_d256lr-0.001wd1e-06.pth"
+              
                 
                 run_a_trail(train_config=train_config, log_file=f, save_mode=False,save_file=save_path,need_train=False,warm_or_cold='warm')
     if f is not None:
