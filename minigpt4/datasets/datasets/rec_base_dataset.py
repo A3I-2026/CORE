@@ -1,9 +1,4 @@
-"""
- Copyright (c) 2022, salesforce.com, inc.
- All rights reserved.
- SPDX-License-Identifier: BSD-3-Clause
- For full license text, see the LICENSE_Lavis file in the repo root or https://opensource.org/licenses/BSD-3-Clause
-"""
+
 
 import json
 from typing import Iterable
@@ -17,12 +12,7 @@ class RecBaseDataset(Dataset):
     def __init__(
         self, text_processor=None, ann_paths=None
     ):
-        """
-        vis_root (string): Root directory of images (e.g. coco/images/)
-        ann_root (string): directory to store the annotation file
-        """
-        # self.vis_root = vis_root
-        # self.annotation = pd.read_csv(ann_paths[0]+"",sep='\t', index_col=None,header=0).values
+      
         if ann_paths is not None:
             self.annotation = pd.read_pickle(ann_paths[0]+".pkl").values
         # self.annotation = []
