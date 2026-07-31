@@ -1,9 +1,4 @@
-"""
- Copyright (c) 2022, salesforce.com, inc.
- All rights reserved.
- SPDX-License-Identifier: BSD-3-Clause
- For full license text, see the LICENSE_Lavis file in the repo root or https://opensource.org/licenses/BSD-3-Clause
-"""
+
 
 import time
 import random
@@ -15,52 +10,9 @@ except Exception:
 from torch.utils.data import DataLoader
 
 
-# class MultiIterLoader:
-#     """
-#     A simple wrapper for iterating over multiple iterators.
-
-#     Args:
-#         loaders (List[Loader]): List of Iterator loaders.
-#         ratios (List[float]): List of ratios to sample from each loader. If None, all loaders are sampled uniformly.
-#     """
-
-#     def __init__(self, loaders, ratios=None):
-#         # assert all loaders has __next__ method
-#         for loader in loaders:
-#             assert hasattr(
-#                 loader, "__next__"
-#             ), "Loader {} has no __next__ method.".format(loader)
-
-#         if ratios is None:
-#             ratios = [1.0] * len(loaders)
-#         else:
-#             assert len(ratios) == len(loaders)
-#             ratios = [float(ratio) / sum(ratios) for ratio in ratios]
-
-#         self.loaders = loaders
-#         self.ratios = ratios
-
-#     def __next__(self):
-#         # random sample from each loader by ratio
-#         loader_idx = random.choices(range(len(self.loaders)), self.ratios, k=1)[0]
-#         return next(self.loaders[loader_idx])
-    
-#     # def __len__(self):
-#     #     return len(self.loaders)
-    
-#     # def __iter__(self):
-#     #     # for loader in self.loaders:
-#     #     #     yield loader
-#     #     return self
 
 class MultiIterLoader:
-    """
-    A simple wrapper for iterating over multiple iterators.
-
-    Args:
-        loaders (List[Loader]): List of Iterator loaders.
-        ratios (List[float]): List of ratios to sample from each loader. If None, all loaders are sampled uniformly.
-    """
+   
 
     def __init__(self, loaders, ratios=None):
         fixed_loaders = []
@@ -85,22 +37,10 @@ class MultiIterLoader:
         loader_idx = random.choices(range(len(self.loaders)), self.ratios, k=1)[0]
         return next(self.loaders[loader_idx])
     
-    # def __len__(self):
-    #     return len(self.loaders)
-    
-    # def __iter__(self):
-    #     # for loader in self.loaders:
-    #     #     yield loader
-    #     return self
 
 
 class PrefetchLoader(object):
-    """
-    Modified from https://github.com/ChenRocks/UNITER.
 
-    overlap compute and cuda data transfer
-    (copied and then modified from nvidia apex)
-    """
 
     def __init__(self, loader):
         self.loader = loader
@@ -130,16 +70,7 @@ class PrefetchLoader(object):
             self.batch = next(it)
         except StopIteration:
             self.batch = None
-            return
-        # if record_stream() doesn't work, another option is to make sure
-        # device inputs are created on the main stream.
-        # self.next_input_gpu = torch.empty_like(self.next_input,
-        #                                        device='cuda')
-        # self.next_target_gpu = torch.empty_like(self.next_target,
-        #                                         device='cuda')
-        # Need to make sure the memory allocated for next_* is not still in use
-        # by the main stream at the time we start copying to next_*:
-        # self.stream.wait_stream(torch.cuda.current_stream())
+    
         if self.stream is None:
             if move_to_device is not None:
                 self.batch = move_to_device(self.batch, 'npu')
@@ -190,12 +121,7 @@ def record_cuda_stream(batch):
 
 
 class IterLoader:
-    """
-    A wrapper to convert DataLoader as an infinite iterator.
-
-    Modified from:
-        https://github.com/open-mmlab/mmcv/blob/master/mmcv/runner/iter_based_runner.py
-    """
+ 
 
     def __init__(self, dataloader: DataLoader, use_distributed: bool = False):
         self._dataloader = dataloader
