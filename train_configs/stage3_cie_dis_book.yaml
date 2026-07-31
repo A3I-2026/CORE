@@ -1,23 +1,23 @@
 model:
   arch: mini_gpt4rec_v2
   model_type: pretrain_vicuna
-# --- 核心训练控制 ---
+
   use_lora: True           
   freeze_lora: true      
-  freeze_rec: True         # 依然冻结底座推荐模型
-  freeze_proj: False       # 解冻映射层
+  freeze_rec: True         
+  freeze_proj: False       
   max_txt_len: 1024
   proj_token_num: 1
   proj_drop: 0.1
   proj_mid_times: 2
   end_sym: "###"
   enable_soft_prompt: True
-    # --- Soft Prompt 配置 ---
+    # --- Soft Prompt ---
   use_text_prompt: True
   soft_prompt: "soft_prompt_v2" 
   soft_prompt_len: 3      
-  freeze_soft_prompt: False # 解冻软提示，使其学习更精准的个性化特征
-  # --- 蒸馏配置 ---
+  freeze_soft_prompt: False 
+  # --- distill  ---
   distill_weight: 0.15      
   distill_text: "Analyze the user's history and predict if the user will like the target item."
   prompt_path: "/your/path/CORE/prompts/softprompt_amazon.txt"
@@ -45,7 +45,7 @@ datasets:
     build_info:
       storage: "/your/path/CORE/datasets/amazon-book/"
     few_shot_size: 500000
-    selected_indices_path: "/your/path/CORE/dataprune/prune/selected/collm_mapped_book_samples.txt"
+    selected_indices_path: "/your/path/CORE/dataprune/prune/selected/amazon_book_indices.txt"
 
 
 run:
@@ -57,7 +57,7 @@ run:
   mode: 'v2'
   weight_decay: 0.1
   max_epoch:  240
-  iters_per_epoch: 150       # 针对 Book 增加单轮迭代次数
+  iters_per_epoch: 150       
   batch_size_train: 16
   batch_size_eval: 128
   num_workers: 4
