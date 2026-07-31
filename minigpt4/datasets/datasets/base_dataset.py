@@ -1,9 +1,3 @@
-"""
- Copyright (c) 2022, salesforce.com, inc.
- All rights reserved.
- SPDX-License-Identifier: BSD-3-Clause
- For full license text, see the LICENSE_Lavis file in the repo root or https://opensource.org/licenses/BSD-3-Clause
-"""
 
 import json
 from typing import Iterable
@@ -16,10 +10,7 @@ class BaseDataset(Dataset):
     def __init__(
         self, vis_processor=None, text_processor=None, vis_root=None, ann_paths=[]
     ):
-        """
-        vis_root (string): Root directory of images (e.g. coco/images/)
-        ann_root (string): directory to store the annotation file
-        """
+     
         self.vis_root = vis_root
 
         self.annotation = []
