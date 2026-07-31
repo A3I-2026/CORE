@@ -21,7 +21,7 @@ model:
   # --- distill ---
   distill_weight: 0.15      
   distill_text: "Analyze the user's history and predict if the user will like the target item."
-  prompt_path: "/your/path/CORE/prompts/tallrec_movie.txt"
+  prompt_path: "/your/path/CORE/prompts/core_movie.txt"
   llama_model: "/your/path/CORE/minigpt4rec-log/vicuna-7b"
   user_num: -100
   item_num: -100
