@@ -2,7 +2,6 @@ model:
   arch: mini_gpt4rec_v2
   model_type: pretrain_vicuna
   
-# --- 核心训练控制（二阶段逻辑） ---
   use_lora: True           
   freeze_lora: False        
   freeze_rec: True        
@@ -14,14 +13,14 @@ model:
   proj_mid_times: 2      
   end_sym: "###"
   
-# --- Soft Prompt (软提示) 配置 ---
+# --- Soft Prompt ---
   enable_soft_prompt: True
   soft_prompt: "soft_prompt_v2"
-  soft_prompt_len: 20       # 参照 Book 的配置，设定 3 个虚拟 Token
+  soft_prompt_len: 20       
   freeze_soft_prompt: False 
   
-# --- 蒸馏配置 ---
-  distill_weight: 0.15     # 蒸馏损失权重
+# --- distill ---
+  distill_weight: 0.15     
   distill_text: "Analyze the user's history and predict if the user will like the target item."
   
   prompt_path: "/your/path/CORE/prompts/core_sports.txt"
@@ -48,10 +47,10 @@ model:
 
 datasets:
   amazon_ood:
-    path: "/your/path/CORE/collm-datasets/sports/"
+    path: "/your/path/CORE/datasets/sports/"
     data_type: default
     build_info:
-      storage: "/root/CoLLM-main/CoLLM/collm-datasets/sports/"
+      storage: "/root/CoLLM-main/CoLLM/datasets/sports/"
     selected_indices_path:  "/your/path/CORE/dataprune/prune/selected/amazon_sports_indices.txt"
     few_shot_size: 500000 
 
@@ -84,5 +83,5 @@ run:
   device: "npu"
   world_size: 1
   distributed: False
-  dist_url: "tcp://127.0.0.1:29509"
+  dist_url: "tcp://127.0.0.1:xxx"
   accum_grad_iters: 4       
