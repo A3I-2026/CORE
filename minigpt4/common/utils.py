@@ -1,9 +1,4 @@
-"""
- Copyright (c) 2022, salesforce.com, inc.
- All rights reserved.
- SPDX-License-Identifier: BSD-3-Clause
- For full license text, see the LICENSE_Lavis file in the repo root or https://opensource.org/licenses/BSD-3-Clause
-"""
+
 
 import io
 import json
@@ -56,9 +51,6 @@ def load_json(filename):
         return json.load(f)
 
 
-# The following are adapted from torchvision and vissl
-# torchvision: https://github.com/pytorch/vision
-# vissl: https://github.com/facebookresearch/vissl/blob/main/vissl/utils/download.py
 
 
 def makedir(dir_path):
@@ -91,27 +83,15 @@ def get_redirected_url(url: str):
 
 
 def to_google_drive_download_url(view_url: str) -> str:
-    """
-    Utility function to transform a view URL of google drive
-    to a download URL for google drive
-    Example input:
-        https://drive.google.com/file/d/137RyRjvTBkBiIfeYBNZBtViDHQ6_Ewsp/view
-    Example output:
-        https://drive.google.com/uc?export=download&id=137RyRjvTBkBiIfeYBNZBtViDHQ6_Ewsp
-    """
+ 
     splits = view_url.split("/")
     assert splits[-1] == "view"
     file_id = splits[-2]
-    return f"https://drive.google.com/uc?export=download&id={file_id}"
+    return f"{file_id}"
 
 
 def download_google_drive_url(url: str, output_path: str, output_file_name: str):
-    """
-    Download a file from google drive
-    Downloading an URL from google drive requires confirmation when
-    the file of the size is too big (google drive notifies that
-    anti-viral checks cannot be performed on such files)
-    """
+  
     import requests
 
     with requests.Session() as session:
