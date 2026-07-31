@@ -66,21 +66,21 @@ def now():
 runner_instance = None
 
 def signal_handler(sig, frame):
-    print(f'\n[进程 {get_rank()}] 接收到中断信号 ({sig})，正在优雅退出...')
+    print(f'\n[process {get_rank()}] recieved signal ({sig})，exiting...')
     
     if runner_instance is not None:
         try:
-            print(f"[进程 {get_rank()}] 尝试保存检查点...")
+            print(f"[process {get_rank()}] try to save CKPT...")
             if hasattr(runner_instance, '_save_checkpoint'):
                 runner_instance._save_checkpoint(runner_instance.inner_epoch, is_best=False)
-            print(f"[进程 {get_rank()}] 检查点保存完成")
+            print(f"[process {get_rank()}] has saved CKPT  ")
         except Exception as e:
             pass
             
     if dist.is_initialized():
         try:
             dist.destroy_process_group()
-            print(f"[进程 {get_rank()}] 分布式进程组已销毁")
+            
         except Exception as e:
             pass
             
@@ -133,14 +133,13 @@ def main():
         else:
             raise ValueError("No path found in config")
     except Exception as e:
-        print(f"⚠️ 动态读取路径失败，强行指向 ml-1m 真实物理路径...")
-        data_dir = "/root/CoLLM-main/CoLLM/collm-datasets/ml-1m/"
+      
+        data_dir = "/your/path/CORE/datasets/ml-1m/"
         
     train_ = pd.read_pickle(os.path.join(data_dir, "train_ood2.pkl"))
     valid_ = pd.read_pickle(os.path.join(data_dir, "valid_ood2.pkl"))
     test_ =  pd.read_pickle(os.path.join(data_dir, "test_ood2.pkl"))
-    
-    # === 核心修复：将 numpy.int64 强制转换为 Python 原生 int ===
+
     user_num = int(max(train_.uid.max(), valid_.uid.max(), test_.uid.max()) + 1)
     item_num = int(max(train_.iid.max(), valid_.iid.max(), test_.iid.max()) + 1)
     print("user_num,item_num : ", user_num, item_num)
@@ -163,22 +162,22 @@ def main():
 if __name__ == "__main__":
     try:
         mp.set_start_method('spawn', force=True)
-        print('[进程] 启用 spawn 启动方式')
+        print('use spawn ')
     except Exception as _e:
-        print(f'[进程] 设置 spawn 失败: {_e}')
+        print(f'set spawn ERROR:{_e}')
 
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
-    print("[主入口] 信号处理器已注册")
+ 
     
     try:
         main()
     except Exception as e:
-        print(f"[主入口] 主函数出错: {str(e)}")
+        print(f"main ERROR: {str(e)}")
         import traceback
         traceback.print_exc()
     finally:
-        print(f"[主入口] 执行最后的清理工作")
+        
         if dist.is_initialized():
             try:
                 dist.destroy_process_group()
