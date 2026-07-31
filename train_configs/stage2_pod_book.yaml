@@ -1,23 +1,23 @@
 model:
   arch: mini_gpt4rec_v2
   model_type: pretrain_vicuna
-# --- 核心训练控制 ---
-  use_lora: True           # 开启 LoRA 模块
-  freeze_lora: True        # 保持 Stage 1a 训练好的文本认知
-  freeze_rec: True         # 冻结底层推荐模型 (MF)
-  freeze_proj: true       # [关键] 解冻 CIE 映射层，让它学习如何将 Book 特征对齐到 LLM
+
+  use_lora: True           #  LoRA open
+  freeze_lora: True        
+  freeze_rec: True         # Recommendation model (MF)
+  freeze_proj: true       
   max_txt_len: 1024
   proj_token_num: 1
   proj_drop: 0
   proj_mid_times: 2
   end_sym: "###"
   enable_soft_prompt: True
-    # --- Soft Prompt 配置 ---
+    # --- Soft Prompt ---
   use_text_prompt: True
   soft_prompt: "soft_prompt_v2"
   soft_prompt_len: 3      
   freeze_soft_prompt: False 
-  # --- 蒸馏配置 ---
+  # --- distill ---
   distill_weight: 0.15      
   distill_text: "Analyze the user's history and predict if the user will like the target item."
   prompt_path: "/your/path/CORE/prompts/softprompt_amazon.txt"
