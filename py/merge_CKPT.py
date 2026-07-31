@@ -1,56 +1,55 @@
 import torch
 import os
 
-# --- 路径配置 ---
-# 1. 一阶段 LoRA 的ckpt
+# --- Path Configuration ---
+# 1. Stage 1 LoRA checkpoint
+path_stage1a = "./minigpt4rec-log/lora/checkpoint_best.pth" 
 
-path_stage1a = "/your/path/CORE/minigpt4rec-log/lora/xxxx/checkpoint_best.pth" 
-# 2. 软提示预热的最佳检查点ckpt
+# 2. Best checkpoint of the soft prompt warm-up
+path_stage1b = "./minigpt4rec-log/ml1m_stage2_pod/checkpoint_best.pth"  
 
+# 3. Output: Initial checkpoint for joint training
+output_path = "./minigpt4rec-log/stage2_init_merged_lora.pth"
 
-path_stage1b = "/your/path/CORE/minigpt4rec-log/ml1m_stage2_pod/xxx/checkpoint_best.pth"  
-# 3. 输出：二阶段联合训练的启动文件
-output_path = "/your/path/CORE/minigpt4rec-log/stage2_init_merged_lora.pth"
-
-# --- 执行逻辑 ---
-print(f"正在读取 Stage 1a (Base): {path_stage1a}")
+# --- Execution Logic ---
+print(f"Reading Stage 1a (Base): {path_stage1a}")
 if not os.path.exists(path_stage1a):
-    print(f"❌ 错误：找不到文件 {path_stage1a}")
+    print(f"❌ Error: File not found {path_stage1a}")
     exit(1)
 ckpt_a = torch.load(path_stage1a, map_location="cpu")
 
-print(f"正在读取 Stage 1b (Prompt): {path_stage1b}")
+print(f"Reading Stage 1b (Prompt): {path_stage1b}")
 if not os.path.exists(path_stage1b):
-    print(f"❌ 错误：找不到文件 {path_stage1b}")
+    print(f"❌ Error: File not found {path_stage1b}")
     exit(1)
 ckpt_b = torch.load(path_stage1b, map_location="cpu")
 
-# 核心合并逻辑
-# 以 Stage 1a 为基础 (包含 LoRA, Proj)
+# Core merging logic
+# Base on Stage 1a (contains LoRA, Proj)
 merged_state_dict = ckpt_a["model"]
 
-# 将 Stage 1b 中的 Soft Prompt 覆盖/添加进去
+# Overwrite/add Soft Prompt from Stage 1b
 if "soft_prompt" in ckpt_b["model"]:
-    print("✅ 在 Stage 1b 中发现了 soft_prompt，正在合并...")
+    print("✅ Found soft_prompt in Stage 1b, merging...")
     soft_prompt_tensor = ckpt_b["model"]["soft_prompt"]
     merged_state_dict["soft_prompt"] = soft_prompt_tensor
     print(f"   Soft Prompt Shape: {soft_prompt_tensor.shape}")
 else:
-    print("⚠️ 警告：Stage 1b 中没找到 soft_prompt，请检查文件！")
+    print("⚠️ Warning: soft_prompt not found in Stage 1b, please check the file!")
 
-# 构造新的 Checkpoint 对象
-# 既然是新阶段，优化器状态(optimizer)就不要了，让它重新初始化
+# Construct the new Checkpoint object
+# Since it's a new training stage, discard the optimizer state to force re-initialization
 new_checkpoint = {
     "model": merged_state_dict,
-    "config": ckpt_a["config"], # 使用 1a 的配置作为底板
-    "epoch": 0 # 重置轮次
+    "config": ckpt_a["config"], # Use config from 1a as the template
+    "epoch": 0 # Reset epoch
 }
 
-# 确保输出目录存在
+# Ensure the output directory exists
 output_dir = os.path.dirname(output_path)
 if output_dir and not os.path.exists(output_dir):
     os.makedirs(output_dir, exist_ok=True)
 
 torch.save(new_checkpoint, output_path)
-print(f"\n🎉 合并成功！已保存至: {output_path}")
-print("👉 下一步：请在stage3.yaml 中将 resume_ckpt_path 设置为该路径。")
+print(f"\n🎉 Successfully merged! Saved to: {output_path}")
+print("👉 Next step: Please set resume_ckpt_path to this path in your stage3.yaml configuration.")
