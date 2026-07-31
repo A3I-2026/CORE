@@ -103,7 +103,7 @@ class MiniGPT4Rec_v2(Rec2Base):
         print('Loading Rec_model')
         self.rec_model_type = rec_model
         self.rec_encoder = self.init_rec_encoder(rec_model, rec_config, rec_precision)
-        # 兼容两种预训练路径来源：显式传入的 `pretrained_rec` 或 `rec_config.pretrained_path`
+        
         pretrain_path = None
         if isinstance(pretrained_rec, str) and os.path.exists(pretrained_rec):
             pretrain_path = pretrained_rec
@@ -142,14 +142,14 @@ class MiniGPT4Rec_v2(Rec2Base):
         print('Loading LLAMA')
         if (torch_npu is not None and hasattr(torch_npu, 'npu') and torch_npu.npu.is_available()) or (hasattr(torch, 'npu') and hasattr(torch.npu, 'is_available') and torch.npu.is_available()):
             self.low_resource = False
-        # 规范化权重路径/ID，避免因以斜杠开头或结尾导致 HuggingFace 误判为 repo id
+
         try:
             import os
             from pathlib import Path
             lm_str = str(llama_model).strip()
-            # 去掉尾部斜杠
+     
             lm_str = lm_str.rstrip("/")
-            # 如果是本地目录，强制 local_files_only 并传入规范化路径
+        
             if os.path.isdir(lm_str):
                 lm_resolved = str(Path(lm_str).resolve())
                 self.llama_tokenizer = LlamaTokenizer.from_pretrained(lm_resolved, use_fast=False, local_files_only=True)
@@ -161,7 +161,6 @@ class MiniGPT4Rec_v2(Rec2Base):
             self.llama_tokenizer = LlamaTokenizer.from_pretrained(str(llama_model).rstrip("/"), use_fast=False, local_files_only=True)
         self.llama_tokenizer.pad_token = self.llama_tokenizer.eos_token
 
-        # 在 Ascend NPU 上优先使用 float16，以避免 bf16 的嵌入算子不支持导致的错误
         self.llama_model = LlamaForCausalLM.from_pretrained(
             str(llama_model).rstrip("/"),
             torch_dtype=torch.float16,
@@ -203,17 +202,7 @@ class MiniGPT4Rec_v2(Rec2Base):
             for name, param in self.llama_model_lora.named_parameters():
                 param.requires_grad = False
 
-        # self.llama_proj = nn.Linear(
-        #     self.rec_encoder.config.embedding_size, self.llama_model.config.hidden_size
-        # )
-        # self.llama_proj_user = nn.Linear(
-        #     self.rec_encoder.config.embedding_size, self.llama_model.config.hidden_size
-        # )
-        # self.llama_proj_item = nn.Linear(
-        #     self.rec_encoder.config.embedding_size, self.llama_model.config.hidden_size
-        # )
-        
-        # for normall 
+ 
         
         if self.rec_encoder is not None and 'prompt' not in rec_model:
             print("type:", type(proj_mid), proj_mid)
@@ -235,9 +224,7 @@ class MiniGPT4Rec_v2(Rec2Base):
         else:
             self.llama_proj = None
 
-        # for name, para in self.llama_proj.named_parameters():
-        #     if "weight" in name:
-        #         nn.init.constant_(para,0)
+       
         
         if freeze_proj:
             for name, param in self.llama_proj.named_parameters():
@@ -250,7 +237,7 @@ class MiniGPT4Rec_v2(Rec2Base):
         self.max_txt_len = max_txt_len
         self.end_sym = end_sym
         self.has_print_prompt=False
-        # 默认答案，避免未调用 set_answer_type 时属性缺失
+    
         self.pos_ans = ['Yes']
         self.neg_ans = ['No']
 
@@ -328,22 +315,14 @@ class MiniGPT4Rec_v2(Rec2Base):
             self.soft_prompt_bank = None
             self.distill_weight = 0.0
 
-        # if prompt_path:
-        #     with open(prompt_path, 'r') as f:
-        #         raw_prompts = f.read().splitlines()
-        #     filted_prompts = [raw_prompt for raw_prompt in raw_prompts if "<ImageHere>" in raw_prompt]
-        #     self.prompt_list = [prompt_template.format(p) for p in filted_prompts]
-        #     print('Load {} training prompts'.format(len(self.prompt_list)))
-        #     print('Prompt Example \n{}'.format(random.choice(self.prompt_list)))
-        # else:
-        #     self.prompt_list = []
+     
         if prompt_path:
             try:
                 import os
                 from pathlib import Path
                 repo = Path(__file__).resolve().parents[2]
                 base = repo/ 'prompts'
-                candidates = [str(prompt_path), str(base/'softprompt_amazon.txt'), str(base/'collm_amazon.txt'), str(base/'softprompt.txt'), str(base/'collm_movie.txt')]
+                candidates = [str(prompt_path), str(base/'softprompt_amazon.txt'), str(base/'core_amazon.txt'), str(base/'softprompt.txt'), str(base/'core_movie.txt')]
                 chosen = None
                 for p in candidates:
                     try:
@@ -371,15 +350,12 @@ class MiniGPT4Rec_v2(Rec2Base):
             self.prompt_list = []
             self.prompt_list_p = None
 
-
-        # [新增] 读取蒸馏相关的配置
         self.distill_weight = distill_weight
         self.distill_text = distill_text
         self.soft_prompt_len = soft_prompt_len
         self.soft_prompt_bank_size = soft_prompt_bank_size
-        self.use_text_prompt = use_text_prompt # 从yaml读取教师模板
-        
-        # 参数冻结与解冻逻辑已在上文根据 freeze_lora / freeze_proj 处理；此处不再重复
+        self.use_text_prompt = use_text_prompt
+
 
     def to_be_trained(self):
         if self.use_lora:
@@ -424,7 +400,7 @@ class MiniGPT4Rec_v2(Rec2Base):
             print("answer token ids: pos:",pos_ans_id, "neg ids:", neg_ans_id)
             
         else:
-            # 默认保持当前答案，不再抛错
+       
             return
     def print_prompt(self):
         print('Prompt Pos Example \n{} {} or {}'.format(random.choice(self.prompt_list),self.pos_ans[0],self.neg_ans[0]))
@@ -441,7 +417,7 @@ class MiniGPT4Rec_v2(Rec2Base):
         with self.maybe_autocast():
             all_user_embeds, all_items_embeds = self.rec_encoder.computer()
             user_embeds = self.rec_encoder.user_encoder(sample['UserID'],all_users=all_user_embeds).unsqueeze(-2)
-            # 兼容不同样本键名：优先 PairItemIDs，否则使用 TargetItemID
+
             tgt_key = 'PairItemIDs' if 'PairItemIDs' in sample else 'TargetItemID'
             targetItem_embed = self.rec_encoder.item_encoder(sample[tgt_key], all_items=all_items_embeds)
             
@@ -547,16 +523,7 @@ class MiniGPT4Rec_v2(Rec2Base):
                 idx_flag = torch.cat(idx_flag,dim=1).to(device)
                 idx_nopad = torch.nonzero(idx_flag)
 
-            
 
-        
-            # atts_user = torch.ones(user_embeds_llama.size()[:-1], dtype=torch.long).to(device)
-            # atts_targetItem = torch.ones(targetItem_embeds_llama.size()[:-1], dtype=torch.long).to(device)
-            # atts_interactedItem =  torch.ones(interactedItem_embeds_llama.size()[:-1], dtype=torch.long).to(device)
-                
-                #adding consitence loss
-                
-                 
 
                 sample_embeds_llama = {
                     'User_emb': user_embeds_llama.reshape(batch_size,-1, hidden_size),
@@ -687,7 +654,7 @@ class MiniGPT4Rec_v2(Rec2Base):
         if self.distill_weight > 0 and (self.soft_prompt is not None or use_bank) and self.soft_prompt_len > 0 and isinstance(self.distill_text, str) and len(self.distill_text)>0:
             teacher_tok = self.llama_tokenizer(self.distill_text, return_tensors='pt', padding='max_length', truncation=True, max_length=self.soft_prompt_len, add_special_tokens=False).to(device)
             teacher_emb = self._safe_embed_tokens(teacher_tok.input_ids, device)
-            # 对齐批次维度，避免广播导致的错误与 NaN
+           
             bsz = sample_embeds.size(0)
             if teacher_emb.shape[0] != bsz:
                 teacher_emb = teacher_emb.repeat(bsz, 1, 1)
@@ -702,30 +669,25 @@ class MiniGPT4Rec_v2(Rec2Base):
                     L = min(teacher_emb.shape[1], soft_current.shape[1])
                     teacher_emb = teacher_emb[:, :L, :]
                     soft_current = soft_current[:, :L, :]
-                # 使用 fp32 并进行数值清理，降低半精度溢出导致的 NaN
+            
                 sc = torch.nan_to_num(soft_current.to(torch.float32), nan=0.0, posinf=1e3, neginf=-1e3)
                 te = torch.nan_to_num(teacher_emb.to(torch.float32), nan=0.0, posinf=1e3, neginf=-1e3)
                 loss = loss + self.distill_weight * nn.functional.mse_loss(sc, te)
         return {"loss": loss}
 
     def set_stage2_training(self):
-        """
-        [新增工具函数] 用于一键切换到 '联合适配' 训练模式
-        功能：冻结 LLM 和 LoRA，仅解冻 Soft Prompt 和 CIE 映射层
-        """
+
         print(">>> Switching to Stage 2: Joint Adaptation (Distillation + CIE Tuning) ...")
         
-        # 1. 冻结所有参数 (包括 LLM Backbone 和 LoRA)
+      
         for name, param in self.named_parameters():
             param.requires_grad = False
             
-        # 2. 解冻 Soft Prompt (用于蒸馏)
+   
         if self.soft_prompt is not None:
             self.soft_prompt.requires_grad = True
             print(f" -> Unfrozen: Soft Prompt ({self.soft_prompt.shape})")
-        
-        # 3. 解冻 CIE 映射层 (用于协同信息对齐)
-        # 注意：这里假设 Rec2Base 中映射层叫 llama_proj，请根据 rec_model.py 确认变量名
+      
         if hasattr(self, 'llama_proj'):
             for param in self.llama_proj.parameters():
                 param.requires_grad = True
@@ -733,43 +695,24 @@ class MiniGPT4Rec_v2(Rec2Base):
         else:
             print(" [WARNING] 'llama_proj' not found! Please check variable name in Rec2Base.")
 
-        # 4. 确保 RecModel (MF/LightGCN) 是冻结的 (CoLLM 通常不微调底层推荐模型)
-        # 如果 rec_model 需要微调，请注释掉相关逻辑
-        
-        # 打印可训练参数量以确认
         trainable_params = sum(p.numel() for p in self.parameters() if p.requires_grad)
         print(f" -> Total Trainable Params: {trainable_params}")
 
-    # -----------------------------------------------------------------------------------
-    # 修改 1: 增加一个辅助函数来区分“指令模板”和“数据内容”
-    # 如果要彻底加速，我们需要在推理时去掉模板，只保留必要的 Title 数据（或者连 Title 也不要，只留 ID Embedding）
-    # -----------------------------------------------------------------------------------
 
     def forward_v2(self, samples):
-        # ---------------------------------------------------------------
-        # 1. 准备 CIE 协同嵌入 (Collaborative Embeddings)
-        # ---------------------------------------------------------------
-        # 获取 [User_Emb, Item_Emb] (经过 llama_proj 映射后的向量)
-        # prompt 参数在这里主要用于提取 UserID/ItemID，具体文本内容会在后面被丢弃
+       
         temp_prompt = self.prompt_list[0] if len(self.prompt_list) > 0 else ""
         sample_embeds, atts_samples = self.prompt_based_encode_v2(temp_prompt, samples)
 
         device = sample_embeds.device
-        
-        # ---------------------------------------------------------------
-        # 2. 准备 Teacher Embedding (用于蒸馏的目标)
-        # ---------------------------------------------------------------
+       
         distill_loss = torch.tensor(0.0, device=device)
         
-        # 只有在设置了蒸馏权重、处于训练模式、且有软提示时，才构建 Teacher
         if self.training and self.distill_weight > 0 and self.soft_prompt is not None:
-            # 确保有 Teacher 文本 (从 yaml 读取)
             if not self.distill_text:
-                # 如果 yaml 没写，给一个默认的 Teacher 模板
                 self.distill_text = "Recommend an item for the user based on the history."
             
-            with torch.no_grad(): # Teacher 不需要梯度
-                # 构造纯文本提示作为 Teacher
+            with torch.no_grad(): 
                 teacher_tokens = self.llama_tokenizer(
                     self.distill_text, 
                     return_tensors='pt', 
@@ -779,25 +722,18 @@ class MiniGPT4Rec_v2(Rec2Base):
                     add_special_tokens=False
                 ).to(device)
                 
-                # 获取 Teacher 的 Word Embeddings (未经过 LLM 层的原始语义向量)
                 teacher_embeds = self._safe_embed_tokens(teacher_tokens.input_ids, device)
                 
-                # 对齐 Batch Size
                 bsz = sample_embeds.shape[0]
                 if teacher_embeds.shape[0] != bsz:
                     teacher_embeds = teacher_embeds.expand(bsz, -1, -1)
 
-        # ---------------------------------------------------------------
-        # 3. 构造 Student 输入 (Soft Prompt + CIE + Start Token)
-        # ---------------------------------------------------------------
         inputs_embeds_list = []
         attention_mask_list = []
         
-        # (A) Soft Prompt (Student)
+        # Soft Prompt (Student)
         if self.soft_prompt is not None:
-            # 处理 Soft Prompt (从 Bank 获取或直接获取)
             if self.soft_prompt_bank is not None and ('prompt_flag' in samples or 'UserID' in samples):
-                # ... (保留原有的 Bank 获取逻辑) ...
                 if 'prompt_flag' in samples:
                     prompt_ids = torch.nan_to_num(samples.get('prompt_flag'), nan=0.0).long().clamp(min=0, max=self.soft_prompt_bank_size-1)
                 else:
@@ -806,7 +742,6 @@ class MiniGPT4Rec_v2(Rec2Base):
             else:
                 soft_student = self.soft_prompt.unsqueeze(0).expand(sample_embeds.shape[0], -1, -1)
             
-            # 截断长度
             curr_len = soft_student.shape[1]
             tgt_len = int(self.soft_prompt_len)
             soft_student = soft_student[:, :min(curr_len, tgt_len), :]
@@ -814,30 +749,22 @@ class MiniGPT4Rec_v2(Rec2Base):
             inputs_embeds_list.append(soft_student)
             attention_mask_list.append(torch.ones(soft_student.shape[:2], device=device).long())
             
-            # >>> 计算蒸馏损失 (方案B：L2归一化 + MSE) <<<
-            # 让 Student (Soft Prompt) 逼近 Teacher (Text Embeddings) 的方向
+          
             if self.training and self.distill_weight > 0:
                 min_len = min(soft_student.shape[1], teacher_embeds.shape[1])
-                # 1) 强制为 float32（适配 NPU）
                 student_part = soft_student[:, :min_len, :].to(torch.float32)
                 teacher_part = teacher_embeds[:, :min_len, :].to(torch.float32)
-                # 2) L2 归一化，只学习语义方向，忽略模长差异
                 student_norm = torch.nn.functional.normalize(student_part, p=2, dim=-1)
                 teacher_norm = torch.nn.functional.normalize(teacher_part, p=2, dim=-1)
-                # 3) 归一化后的 MSE
                 distill_loss = self.distill_weight * torch.nn.functional.mse_loss(
                     student_norm,
                     teacher_norm
                 )
 
-        # (B) CIE Embeddings (User + Item) - 核心改动：直接拼接在 SoftPrompt 后面
         inputs_embeds_list.append(sample_embeds)
         attention_mask_list.append(atts_samples)
 
-        # (C) [关键] 丢弃离散文本提示 (q_embeds)
-        # 在这里我们不再计算 q_tokens，因为我们希望 Student 只依赖 SoftPrompt 和 CIE
-        
-        # (D) Start Token (触发生成)
+    
         start_tok = self.llama_tokenizer(" ", add_special_tokens=False).input_ids[0]
         start_tokens = torch.full((sample_embeds.shape[0], 1), start_tok, device=device).long()
         start_embeds = self._safe_embed_tokens(start_tokens, device)
@@ -845,20 +772,14 @@ class MiniGPT4Rec_v2(Rec2Base):
         inputs_embeds_list.append(start_embeds)
         attention_mask_list.append(torch.ones_like(start_tokens))
 
-        # 拼接最终输入
+    
         final_inputs = torch.cat(inputs_embeds_list, dim=1)
         final_atts = torch.cat(attention_mask_list, dim=1)
 
-        # ---------------------------------------------------------------
-        # 4. LLM 前向传播 & 推荐 Loss 计算
-        # ---------------------------------------------------------------
-        # 确保使用 LoRA 模型 (如果开启)
+     
         model_to_run = self.llama_model_lora if self.use_lora else self.llama_model
         
-        # 调用 LLM 计算 Causal Language Modeling Loss
-        # 这里的 labels 逻辑通常由 runner 或 dataset 处理，或者如果 labels 包含在 samples 中
-        # 假设父类或 LLM 内部处理了 loss 计算 (如果 inputs_embeds 和 targets 对齐)
-        # 这里我们手动提取 logits 计算 loss，参考原有逻辑
+        
         
         outputs = model_to_run(
             inputs_embeds=final_inputs, 
@@ -866,8 +787,6 @@ class MiniGPT4Rec_v2(Rec2Base):
             return_dict=True
         )
         
-        # 重新复用原有的 Loss 计算逻辑 (Logits -> Prediction)
-        # 基于最后一个 Token 的二分类（Yes/No），与 samples['label'] 对齐
         bsz = sample_embeds.shape[0]
         try:
             am = final_atts[:, :outputs.logits.shape[1]]
@@ -877,17 +796,14 @@ class MiniGPT4Rec_v2(Rec2Base):
         idx = valid_last.to(outputs.logits.device)
         logits = outputs.logits[torch.arange(bsz, device=idx.device), idx, :]
 
-        # 获取 Yes/No 的 Token ID（前置空格以匹配 tokenizer 习惯）
         pos_str = getattr(self, "pos_ans", ["Yes"])[0]
         neg_str = getattr(self, "neg_ans", ["No"])[0]
         pos_id = self.llama_tokenizer(" " + pos_str, add_special_tokens=False).input_ids[-1]
         neg_id = self.llama_tokenizer(" " + neg_str, add_special_tokens=False).input_ids[-1]
 
-        # 二分类 logits
         logits_pair = logits[:, [neg_id, pos_id]]
         logits_pair = torch.nan_to_num(logits_pair, nan=0.0, posinf=1.0, neginf=0.0).float()
 
-        # 获取真实标签：优先 label；其次解析 targets 文本；最后兜底为 0
         if 'label' in samples:
             labels = torch.nan_to_num(samples['label'], nan=0.0).to(device).long()
         elif 'targets' in samples:
@@ -901,16 +817,14 @@ class MiniGPT4Rec_v2(Rec2Base):
             print("[Warning] No 'label' or 'targets' found in samples! Defaulting to zeros.")
             labels = torch.zeros(bsz, dtype=torch.long, device=device)
 
-        # 推荐任务损失（强制 logits 为 float32，以适配 NPU）
         rec_loss = torch.nn.functional.cross_entropy(logits_pair.to(torch.float32), labels)
 
         probs = torch.softmax(logits_pair.to(torch.float32), dim=-1)[:, 1]
 
-        # 总损失并返回
         total_loss = rec_loss + distill_loss
         probs = torch.softmax(logits_pair, dim=-1)[:, 1]
         return {"loss": total_loss, "rec_loss": rec_loss.detach(), "distill_loss": distill_loss.detach(), "logits": probs.detach(),  # 返回预测概率
-            "labels": labels.detach()  # 返回真实标签
+            "labels": labels.detach()  
              }
 
 
@@ -1021,7 +935,6 @@ class MiniGPT4Rec_v2(Rec2Base):
                 self.llama_model.model.embed_tokens = self.llama_model.model.embed_tokens.to(device)
         except Exception:
             pass
-        # 新增：当关闭文本提示时，推理只用 Soft Prompt + CIE，并用 generate 取首个生成 token 的分数
         if True:
             inputs_embeds_list = []
             if self.soft_prompt is not None:
@@ -1076,7 +989,6 @@ class MiniGPT4Rec_v2(Rec2Base):
             except Exception:
                 q_embeds = torch.zeros((samples['UserID'].shape[0], 0, self.llama_model.config.hidden_size), dtype=torch.float16, device=device)
                 q_atts = torch.ones((samples['UserID'].shape[0], 0), dtype=torch.long, device=device)
-        # q_embeds/q_atts 已在上面的 try/except 设置完毕
         start_tok = self.llama_tokenizer(" ", add_special_tokens=False).input_ids[0]
         start_tokens = torch.full((samples['UserID'].shape[0], 1), start_tok, dtype=torch.long, device=device)
         start_embeds = self._safe_embed_tokens(start_tokens, device)
@@ -1130,7 +1042,6 @@ class MiniGPT4Rec_v2(Rec2Base):
 
     @classmethod
     def from_config(cls, cfg):
-        # 1. 提取基础参数 (保持不变)
         llama_model = cfg.get("llama_model")
         user_num = cfg.get("user_num")
         item_num = cfg.get("item_num")
@@ -1140,20 +1051,16 @@ class MiniGPT4Rec_v2(Rec2Base):
         lora_config = cfg.get("lora_config", None)
         rec_config = cfg.get("rec_config", None)
         
-        # 2. 提取 Soft Prompt 相关参数 (保持不变)
         enable_soft_prompt = cfg.get("enable_soft_prompt", False)
         soft_prompt_len = cfg.get("soft_prompt_len", 0)
         soft_prompt_init_path = cfg.get("soft_prompt_init_path", "")
         use_text_prompt = cfg.get("use_text_prompt", True)
         soft_prompt_bank_size = cfg.get("soft_prompt_bank_size", 0)
 
-        # [修改点 4] 从 cfg 中提取我们新增的参数
         distill_weight = cfg.get("distill_weight", 0.0)
         distill_text = cfg.get("distill_text", "")
-        # 注意：这里读取 yaml 里的 freeze_proj，默认值为 True
         freeze_proj = cfg.get("freeze_proj", True)
 
-        # 3. 实例化类，将所有参数传进去
         model = cls(
             llama_model=llama_model,
             user_num=user_num,
@@ -1169,7 +1076,6 @@ class MiniGPT4Rec_v2(Rec2Base):
             use_text_prompt=use_text_prompt,
             soft_prompt_bank_size=soft_prompt_bank_size,
             
-            # [修改点 5] 传递新增参数
             distill_weight=distill_weight,
             distill_text=distill_text,
             freeze_proj=freeze_proj
