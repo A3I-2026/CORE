@@ -44,15 +44,15 @@ def get_args():
     parser.add_argument("--adam_beta2", type=float, default=0.999, help="adam second beta value")
     
     # LLM args
-    parser.add_argument("--base_model", type=str, default="/storage_fast/rhshui/llm/llama_hf/7B/", help="your path to hf llama model weight")
-    parser.add_argument("--train_data_path", type=str, default="/your/path/CORE/LLM4Rec/efficient_tuning/code/DEALRec/data/games/train_49156.json", help="your path of the training data")
-    parser.add_argument("--resume_from_checkpoint", type=str, default="/your/path/CORE/recommendation/LLM/code/alpaca/alpaca-lora-7B/", help="path of the alpaca lora adapter")
+    parser.add_argument("--base_model", type=str, default="./models/alpaca-lora-7B/", help="your path to hf llama model weight")
+    parser.add_argument("--train_data_path", type=str, default="./dataprune/finetune/data/games/train_49156.json", help="your path of the training data")
+    parser.add_argument("--resume_from_checkpoint", type=str, default="./models/LLaMA-2-7B/", help="Relative path to the base LLaMA-2-7B model weights")
     parser.add_argument("--cutoff_len", default=512, type=int, help="cut off length for LLM input")
     parser.add_argument("--lora_r", default=8, type=int, help="lora r")
     parser.add_argument("--lora_alpha", default=16, help="lora alpha")
     parser.add_argument("--lora_dropout", default=0.05, help="lora dropout")
 
-    # DEALRec args
+    #dataprune args
     parser.add_argument('--n_fewshot', default=1024, type=int)
     parser.add_argument("--lamda", type=float, default=0.5, help="strength of gap regularization (effort score)")
     parser.add_argument('--k', default=25, type=int, help="number of groups")
