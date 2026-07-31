@@ -104,16 +104,6 @@ class MF_linear(nn.Module):
     
 
 
-"""
-Created on Mar 1, 2020
-Pytorch Implementation of LightGCN in
-Xiangnan He et al. LightGCN: Simplifying and Powering Graph Convolution Network for Recommendation
-
-@author: Jianbai Ye (gusye@mail.ustc.edu.cn)
-
-Define models here
-"""
-
 class LightGCN(nn.Module):
     def __init__(self, 
                  config):
@@ -366,9 +356,6 @@ class PointWiseFeedForward(nn.Module):
         outputs += inputs
         return outputs
 
-# pls use the following self-made multihead attention layer
-# in case your pytorch version is below 1.16 or for other reasons
-# https://github.com/pmixer/TiSASRec.pytorch/blob/master/model.py
 
 class SASRec(nn.Module):
     def __init__(self, args):
@@ -379,8 +366,6 @@ class SASRec(nn.Module):
         self.item_num = args.item_num
         
 
-        # TODO: loss += args.l2_emb for regularizing embedding vectors during training
-        # https://stackoverflow.com/questions/42704283/adding-l1-l2-regularization-in-pytorch
         self.item_emb = torch.nn.Embedding(self.item_num, args.hidden_units, padding_idx=0)
         self.pos_emb = torch.nn.Embedding(args.maxlen, args.hidden_units) # TO IMPROVE
         self.emb_dropout = torch.nn.Dropout(p=args.dropout_rate)
@@ -606,24 +591,7 @@ class SASRec(nn.Module):
 #######  DCN modules
 
 class CrossNetwork(nn.Module):
-    """The Cross Network part of Deep&Cross Network model,
-    which leans both low and high degree cross feature.
-      Input shape
-        - 2D tensor with shape: ``(batch_size, units)``.
-      Output shape
-        - 2D tensor with shape: ``(batch_size, units)``.
-      Arguments
-        - **in_features** : Positive integer, dimensionality of input features.
-        - **input_feature_num**: Positive integer, shape(Input tensor)[-1]
-        - **layer_num**: Positive integer, the cross layer number
-        - **parameterization**: string, ``"vector"``  or ``"matrix"`` ,  way to parameterize the cross network.
-        - **l2_reg**: float between 0 and 1. L2 regularizer strength applied to the kernel weights matrix
-        - **seed**: A Python integer to use as random seed.
-      References
-        - [Wang R, Fu B, Fu G, et al. Deep & cross network for ad click predictions[C]//Proceedings of the ADKDD'17. ACM, 2017: 12.](https://arxiv.org/abs/1708.05123)
-        - [Wang R, Shivanna R, Cheng D Z, et al. DCN-M: Improved Deep & Cross Network for Feature Cross Learning in Web-scale Learning to Rank Systems[J]. 2020.](https://arxiv.org/abs/2008.13535)
-    """
-
+   
     def __init__(self, in_features, layer_num=2, parameterization='vector', seed=1024, device='cpu'):
         super(CrossNetwork, self).__init__()
         self.layer_num = layer_num
@@ -717,20 +685,9 @@ def varlenSparseFeature(feat, feat_num, max_len, embed_dim=4):
     """
     return {'feat_name': feat, 'feat_num': feat_num, 'max_len': max_len, 'embed_dim': embed_dim}
 
-####  DIN
 
-##### DIN modules
 class Dice(nn.Module):
-    """The Data Adaptive Activation Function in DIN,which can be viewed as a generalization of PReLu and can adaptively adjust the rectified point according to distribution of input data.
-    Input shape:
-        - 2 dims: [batch_size, embedding_size(features)]
-        - 3 dims: [batch_size, num_features, embedding_size(features)]
-    Output shape:
-        - Same shape as input.
-    References
-        - [Zhou G, Zhu X, Song C, et al. Deep interest network for click-through rate prediction[C]//Proceedings of the 24th ACM SIGKDD International Conference on Knowledge Discovery & Data Mining. ACM, 2018: 1059-1068.](https://arxiv.org/pdf/1706.06978.pdf)
-        - https://github.com/zhougr1993/DeepInterestNetwork, https://github.com/fanoping/DIN-pytorch
-    """
+  
 
     def __init__(self, emb_size, dim=2, epsilon=1e-8):
         super(Dice, self).__init__()
@@ -922,21 +879,18 @@ class RecEncoder_DIN(nn.Module):
         return concat_feature
 
     def forward(self, inputs):
-        # 修复分布式环境下的解包错误
+        # 
         if isinstance(inputs, (list, tuple)) and len(inputs) >= 2:
-            sparse_inputs, sequence_inputs = inputs[:2]  # 只取前两个元素
+            sparse_inputs, sequence_inputs = inputs[:2]  
         elif isinstance(inputs, (list, tuple)) and len(inputs) == 1:
-            # 如果只有一个元素，尝试将其作为sparse_inputs
             sparse_inputs = inputs[0]
             sequence_inputs = None
         else:
-            # 如果inputs不是列表或元组，直接使用它
             sparse_inputs = inputs
             sequence_inputs = None
         
-        # 如果没有sequence_inputs，创建一个默认值
         if sequence_inputs is None:
-            # 创建一个默认的序列输入，形状为[batch_size, 1]
+     
             batch_size = sparse_inputs.shape[0]
             sequence_inputs = torch.zeros((batch_size, 1), dtype=torch.long, device=sparse_inputs.device)
         user_emb = self.embed_layers[0](sparse_inputs[:, 0])
