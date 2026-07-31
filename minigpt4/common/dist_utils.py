@@ -1,9 +1,4 @@
-"""
- Copyright (c) 2022, salesforce.com, inc.
- All rights reserved.
- SPDX-License-Identifier: BSD-3-Clause
- For full license text, see the LICENSE_Lavis file in the repo root or https://opensource.org/licenses/BSD-3-Clause
-"""
+
 
 import gzip
 import logging
@@ -167,28 +162,7 @@ def reorg_datasets_by_split(datasets):
 
 
 def concat_datasets(datasets):
-    """
-    Concatenates multiple datasets into a single dataset.
 
-    It supports may-style datasets and DataPipeline from WebDataset. Currently, does not support
-    generic IterableDataset because it requires creating separate samplers.
-
-    Now only supports conctenating training datasets and assuming validation and testing
-    have only a single dataset. This is because metrics should not be computed on the concatenated
-    datasets.
-
-    Args:
-        datasets: dict of torch.utils.data.Dataset objects by split.
-
-    Returns:
-        Dict of concatenated datasets by split, "train" is the concatenation of multiple datasets,
-        "val" and "test" remain the same.
-
-        If the input training datasets contain both map-style and DataPipeline datasets, returns
-        a tuple, where the first element is a concatenated map-style dataset and the second
-        element is a chained DataPipeline dataset.
-
-    """
     # concatenate datasets in the same split
     for split_name in datasets:
         if split_name != "train":
