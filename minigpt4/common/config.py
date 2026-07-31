@@ -1,9 +1,4 @@
-"""
- Copyright (c) 2022, salesforce.com, inc.
- All rights reserved.
- SPDX-License-Identifier: BSD-3-Clause
- For full license text, see the LICENSE_Lavis file in the repo root or https://opensource.org/licenses/BSD-3-Clause
-"""
+
 
 import logging
 import json
@@ -30,12 +25,7 @@ class Config:
         model_config = self.build_model_config(config, **user_config)
         dataset_config = self.build_dataset_config(config)
 
-        # Validate the user-provided runner configuration
-        # model and dataset configuration are supposed to be validated by the respective classes
-        # [TODO] validate the model/dataset configuration
-        # self._validate_runner_config(runner_config)
-
-        # Override the default configuration with user options.
+     
         self.config = OmegaConf.merge(
             runner_config, model_config, dataset_config, user_config
         )
@@ -171,18 +161,7 @@ def node_to_dict(node):
 
 
 class ConfigValidator:
-    """
-    This is a preliminary implementation to centralize and validate the configuration.
-    May be altered in the future.
 
-    A helper class to validate configurations from yaml file.
-
-    This serves the following purposes:
-        1. Ensure all the options in the yaml are defined, raise error if not.
-        2. when type mismatches are found, the validator will raise an error.
-        3. a central place to store and display helpful messages for supported configurations.
-
-    """
 
     class _Argument:
         def __init__(self, name, choices=None, type=None, help=None):
