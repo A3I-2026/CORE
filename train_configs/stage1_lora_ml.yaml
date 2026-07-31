@@ -19,7 +19,7 @@ model:
   prompt_path: "/your/path/CORE/prompts/core_movie.txt"
   use_text_prompt: True
   prompt_template: "User history: <ItemTitleList>\nTarget: <TargetItemTitle>\nIs this a good recommendation? Answer Yes or No."
-  llama_model: "/tuili/CoLLM/vicuna-7b"
+  llama_model: "/your/path/CORE/vicuna-7b"
   user_num: -100
   item_num: -100
   ans_type: "v2"
