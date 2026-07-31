@@ -1,7 +1,6 @@
 model:
   arch: mini_gpt4rec_v2
   model_type: pretrain_vicuna
-# --- 核心训练控制 ---
   use_lora: false           
   freeze_lora: true        
   freeze_rec: true         
@@ -14,13 +13,13 @@ model:
   end_sym: "###"
   #use_grad_ckpt: true
   enable_soft_prompt: true
-    # --- Soft Prompt 配置 ---
+    # --- Soft Prompt---
   use_text_prompt: True
-  soft_prompt: "soft_prompt_v2" # 随便起个名，触发初始化
-  soft_prompt_len: 3      # 软提示长度
-  freeze_soft_prompt: False # [关键] 解冻软提示 (让它学习)
-  # --- 蒸馏配置 ---
-  distill_weight: 0.15      # 开启蒸馏 Loss
+  soft_prompt: "soft_prompt_v2" 
+  soft_prompt_len: 3     
+  freeze_soft_prompt: False 
+  # --- distill ---
+  distill_weight: 0.15      
   distill_text: "Analyze the user's history and predict if the user will like the target item."
   prompt_path: "/your/path/CORE/prompts/tallrec_movie.txt"
   llama_model: "/your/path/CORE/minigpt4rec-log/vicuna-7b"
