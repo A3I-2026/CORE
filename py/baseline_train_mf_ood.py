@@ -1,3 +1,10 @@
+"""
+ Copyright (c) 2022, salesforce.com, inc.
+ All rights reserved.
+ SPDX-License-Identifier: BSD-3-Clause
+ For full license text, see the LICENSE_Lavis file in the repo root or https://opensource.org/licenses/BSD-3-Clause
+"""
+
 from minigpt4.models.rec_model import MatrixFactorization
 from torch.utils.data.dataset import Dataset
 from torch.utils.data.dataloader import DataLoader
@@ -11,7 +18,7 @@ import omegaconf
 import random 
 
 import torch
-# 尝试导入 torch_npu，防止环境未自动加载
+# Try to import torch_npu to prevent the environment from not loading it automatically
 try:
     import torch_npu
     from torch_npu.contrib import transfer_to_npu
@@ -81,10 +88,10 @@ def uAUC_me(user, predict, label):
 
 
 class early_stoper(object):
-    def __init__(self,ref_metric='valid_auc', incerase =True,patience=20) -> None:
+    def __init__(self,ref_metric='valid_auc', increase=True, patience=20) -> None:
         self.ref_metric = ref_metric
         self.best_metric = None
-        self.increase = incerase
+        self.increase = increase
         self.reach_count = 0
         self.patience= patience
     
@@ -118,7 +125,8 @@ def run_a_trail(train_config,log_file=None, save_mode=False,save_file=None,need_
     seed=2023
     random.seed(seed)
     np.random.seed(seed)
-    # 统一随机种子设置（CPU/CUDA/NPU），避免使用错误的 torch.to(device)
+    
+    # Unified random seed setting (CPU/CUDA/NPU) to ensure reproducibility
     torch.manual_seed(seed)
     try:
         if torch.cuda.is_available():
@@ -132,8 +140,8 @@ def run_a_trail(train_config,log_file=None, save_mode=False,save_file=None,need_
     except Exception:
         pass
 
-
-    data_dir = "/your/path/CORE/datasets/ml1m/"
+    # Use relative path matching the project structure
+    data_dir = "./datasets/ml-1m/"
     train_data = pd.read_pickle(data_dir+"train_ood2.pkl")[['uid','iid','label']].values
     valid_data = pd.read_pickle(data_dir+"valid_ood2.pkl")[['uid','iid','label']].values
     test_data = pd.read_pickle(data_dir+"test_ood2.pkl")[['uid','iid','label']].values
@@ -165,9 +173,8 @@ def run_a_trail(train_config,log_file=None, save_mode=False,save_file=None,need_
     test_data_loader = DataLoader(test_data, batch_size = train_config['batch_size'], shuffle=False)
 
     model = MatrixFactorization(mf_config).to(device)
-    #opt = torch.optim.Adam(model.parameters(),lr=train_config['lr'],weight_decay=train_config['wd'])
     opt = torch.optim.SGD(model.parameters(), lr=train_config['lr'], weight_decay=train_config['wd'])
-    early_stop = early_stoper(ref_metric='valid_auc',incerase=True,patience=train_config['patience'])
+    early_stop = early_stoper(ref_metric='valid_auc',increase=True,patience=train_config['patience'])
     
     criterion = nn.BCEWithLogitsLoss()
 
@@ -264,9 +271,12 @@ if __name__=='__main__':
     lr_=[1e-3]
     dw_ = [1e-4]
     
-    # 维度对齐：填 256，与后续 LLM 配置文件保持绝对一致！
+    # Dimension alignment: Ensure this strictly matches the LLM configuration file later!
     embedding_size_ = [2048] 
-    save_path_dir = "/your/path/CORE/minigpt4rec-log/"
+    
+    # Use relative path for saving checkpoints
+    save_path_dir = "./minigpt4rec-log/"
+    os.makedirs(save_path_dir, exist_ok=True)
 
     f=None
     for lr in lr_:
@@ -276,17 +286,17 @@ if __name__=='__main__':
                     'lr': lr,
                     'wd': wd,
                     'embedding_size': embedding_size,
-                    "epoch": 200,          # MF 模型跑 200 轮足够了
+                    "epoch": 200,          # 200 epochs are sufficient for the MF model
                     "eval_epoch": 1,
-                    "patience": 30,        # 早停耐心值
-                    "batch_size": 1024    # 2048 适中，防 OOM 且训练速度快
+                    "patience": 30,        # Early stopping patience
+                    "batch_size": 1024     # Moderate batch size, prevents OOM while maintaining fast training
                 }
                 print("=========================================")
-                print("🚀 准备启动 MF 底座训练:", train_config)
+                print("🚀 Preparing to start MF base training:", train_config)
                 
-                # 动态生成正确的文件名，防止路径名张冠李戴
+                # Dynamically generate correct filenames to avoid path mismatches
                 save_path = f"{save_path_dir}sports_mf_best01_d{embedding_size}.pth"
-                print(f"📦 最佳权重将保存在: {save_path}")
+                print(f"📦 Best weights will be saved at: {save_path}")
                 print("=========================================")
                 
                 run_a_trail(train_config=train_config, 
