@@ -431,73 +431,6 @@ def run_a_trail(train_config,log_file=None, save_mode=False,save_file=None,need_
         print("train_config:", train_config, "best result:", early_stop.best_metric, file=log_file)
         log_file.flush()
 
-# if __name__=='__main__':
-#     # lr_ = [1e-1,1e-2,1e-3]
-#     lr_=[1e-4]
-#     dw_ = [1e-1, 1e-2,1e-3,1e-4,1e-5,1e-6,1e-7,0]
-#     # embedding_size_ = [32, 64, 128, 156, 512]
-#     embedding_size_ = [64,128,256]
-#     max_len = 20
-    
-#     try:
-#         f = open("0925book-sasrec_head1_search_lr"+str(lr_[0])+"len"+str(max_len)+".log",'rw+')
-#         # f = open("ml100k-sasrec_search_lrall-int0.1_p100_1layer"+".log",'rw+')
-#     except:
-#         f = open("0925book-sasrec_head1_search_lr"+str(lr_[0])+"len"+str(max_len)+".log",'w+')
-#         # f = open("ml100k-sasrec_lgcn_search_lrall-int0.1_p100_1layer"+".log",'w+')
-#     for lr in lr_:
-#         for wd in dw_:
-#             for embedding_size in embedding_size_:
-#                 train_config={
-#                     'lr': lr,
-#                     'wd': wd,
-#                     'embedding_size': embedding_size,
-#                     "epoch": 5000,
-#                     "eval_epoch":1,
-#                     "patience":100,
-#                     "batch_size": 2048*5, #2048,
-#                     "maxlen": max_len
-#                 }
-#                 print(train_config)
-#                 run_a_trail(train_config=train_config, log_file=f, save_mode=False)
-#     f.close()
-
-
-# {'lr': 0.01, 'wd': 0.01, 'embedding_size': 64, 'epoch': 5000, 'eval_epoch': 1, 'patience': 100, 
-#  'batch_size': 2048, 'maxlen': 25}, {'valid_auc': 0.6901948441436031, 'valid_uauc': 0.681306392663344, 
-# 'test_auc': 0.7078362163379921, 'test_uauc': 0.6738139006659691, 'epoch': 194}) 
-# save version....
-# if __name__=='__main__':
-#     # lr_ = [1e-1,1e-2,1e-3]
-#     lr_=[1e-3] #1e-2
-#     dw_ = [1e-3]
-#     # embedding_size_ = [32, 64, 128, 156, 512]
-#     embedding_size_ = [64]
-
-#     # try:
-#     #     f = open("rec_mf_search_lr"+str(lr_[0])+".log",'rw+')
-#     # except:
-#     #     f = open("rec_mf_search_lr"+str(lr_[0])+".log",'w+')
-#     f=None
-#     for lr in lr_:
-#         for wd in dw_:
-#             for embedding_size in embedding_size_:
-#                 train_config={
-#                     'lr': lr,
-#                     'wd': wd,
-#                     'embedding_size': embedding_size,
-#                     "epoch": 5000,
-#                     "eval_epoch":1,
-#                     "patience":100,
-#                     "batch_size": 2048*5, #2048,
-#                     "maxlen": 20
-#                 }
-#                 print(train_config)
-#                 save_path += "0928sasrec_book_oodv2_best_model_d" + str(embedding_size)+ 'lr-'+ str(lr) + "wd"+str(wd) +"len"+str(train_config['maxlen']) + ".pth"
-#                 run_a_trail(train_config=train_config, log_file=f, save_mode=True,save_file=save_path)
-#     f.close()
-
-
 # with prtrain version:
 if __name__=='__main__':
     # lr_ = [1e-1,1e-2,1e-3]
@@ -529,7 +462,7 @@ if __name__=='__main__':
                 #     save_path += "best_model_d" + str(embedding_size)+ 'lr-'+ str(lr) + "wd"+str(wd) + ".pth"
                 # else:
                 #     save_path += "best_model_d" + str(embedding_size) + ".pth"
-                save_path = save_path + "0928sasrec_book_oodv2_best_model_d64lr-0.001wd0.001len20_true.pth"
+                save_path = save_path + "sasrec_book_oodv2_best_model_d64lr-0.001wd0.001len20_true.pth"
                 
                 run_a_trail(train_config=train_config, log_file=f, save_mode=True,save_file=save_path,need_train=False)
     if f is not None:
