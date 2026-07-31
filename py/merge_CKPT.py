@@ -8,7 +8,7 @@ path_stage1a = "/your/path/CORE/minigpt4rec-log/lora/xxxx/checkpoint_best.pth"
 # 2. 软提示预热的最佳检查点ckpt
 
 
-path_stage1b = "/your/path/CORE/minigpt4rec-log/ml1m_stage2_pod/xxx/checkpoint_best.pth"  #无deal
+path_stage1b = "/your/path/CORE/minigpt4rec-log/ml1m_stage2_pod/xxx/checkpoint_best.pth"  
 # 3. 输出：二阶段联合训练的启动文件
 output_path = "/your/path/CORE/minigpt4rec-log/stage2_init_merged_lora.pth"
 
