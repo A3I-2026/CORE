@@ -51,9 +51,7 @@ class identical_map(nn.Module):
 
 @registry.register_model("mini_gpt4rec_v2")
 class MiniGPT4Rec_v2(Rec2Base):
-    """
-    BLIP2 GPT-LLAMA model.
-    """
+
 
     PRETRAINED_MODEL_CONFIG_DICT = {
         "pretrain_vicuna": "configs/models/minigpt4rec.yaml",
@@ -117,7 +115,6 @@ class MiniGPT4Rec_v2(Rec2Base):
             self.llama_tokenizer.add_special_tokens({"unk_token":""})
             
     def generate_for_samples_v2(self, samples,return_all=False):
-        # 添加异常捕获和内存清理机制
         try:
             # sample = samples["image"]
             user_selective_prompts = False
@@ -148,7 +145,6 @@ class MiniGPT4Rec_v2(Rec2Base):
                         sample_embeds_k, atts_samples_k = self.prompt_based_encode_v2(used_prompt, sub_k_sample)
                         sample_embeds.append(sample_embeds_k)
                         atts_samples.append(atts_samples_k)
-                        # 清理临时变量
                         del sub_k_sample, sample_embeds_k, atts_samples_k
                         import gc
                         gc.collect()
@@ -156,7 +152,7 @@ class MiniGPT4Rec_v2(Rec2Base):
                     atts_samples = torch.cat(atts_samples,dim=0)
                     sample_embeds = sample_embeds[true_idx]
                     atts_samples = atts_samples[true_idx]
-                    # 清理临时变量
+            
                     del true_idx, unique_flags, prompt_flag
                     import gc
                     gc.collect()
@@ -178,7 +174,6 @@ class MiniGPT4Rec_v2(Rec2Base):
 
             ans_ = {1:pos_ans, 0:neg_ans}
 
-            # 使用torch.no_grad()减少内存使用
             with torch.no_grad():
                 # text = ["### Response: " + ans_[int(t)]  for t in samples["label"]]
                 text = [ ans_[int(t)]  for t in samples["label"]]
@@ -207,7 +202,6 @@ class MiniGPT4Rec_v2(Rec2Base):
                 # )
                 targets = torch.cat([empty_targets, targets], dim=1)
                 
-                # 清理临时变量
                 del empty_targets, text
                 import gc
                 gc.collect()
@@ -219,7 +213,6 @@ class MiniGPT4Rec_v2(Rec2Base):
             inputs_embeds = torch.cat([sample_embeds, to_regress_embeds], dim=1)
             attention_mask = torch.cat([atts_samples, to_regress_tokens.attention_mask], dim=1)
             
-            # 清理不再需要的大张量
             del sample_embeds, to_regress_embeds, atts_samples, to_regress_tokens
             import gc
             gc.collect()
@@ -232,7 +225,6 @@ class MiniGPT4Rec_v2(Rec2Base):
                         labels=targets,
                     )
             
-            # 清理嵌入和掩码
             del inputs_embeds, attention_mask, targets
             import gc
             gc.collect()
@@ -242,13 +234,11 @@ class MiniGPT4Rec_v2(Rec2Base):
             logits_ = outputs.logits[:,-t_posi,:][:,pos_ans_id]
             loss = nn.functional.binary_cross_entropy_with_logits(logits_, samples['label'].float())
             
-            # 清理模型输出
             del outputs
             import gc
             gc.collect()
 
             if return_all:
-                # 内存优化：只返回必要部分的副本
                 result = (None, logits_.clone())
                 del logits_
                 return result
@@ -258,7 +248,6 @@ class MiniGPT4Rec_v2(Rec2Base):
                 return result
                 
         except Exception as e:
-            # 异常处理：打印错误并清理内存
             print(f"Error in generate_for_samples_v2: {str(e)}")
             import gc
             gc.collect()
@@ -266,7 +255,6 @@ class MiniGPT4Rec_v2(Rec2Base):
                 torch.cuda.empty_cache()
             raise
         finally:
-            # 确保无论如何都会执行内存清理
             import gc
             gc.collect()
             if torch.cuda.is_available():
