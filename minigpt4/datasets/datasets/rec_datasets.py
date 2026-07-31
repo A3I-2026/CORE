@@ -11,21 +11,7 @@ import logging
 
 
 
-# class RecDataset(RecBaseDataset):
 
-
-#     def __getitem__(self, index):
-
-#         # TODO this assumes image input, not general enough
-#         ann = self.annotation.iloc[index]
-#         return {
-#             "User": ann['User'],
-#             "InteractedItems": ann['InteractedItems'],
-#             "InteractedItemTitles": ann['InteractedItemTitles'],
-#             "TargetItemID": ann["TargetItemID"],
-#             "TargetItemTitle": ann["TargetItemTitle"]
-#         }
-        
 
 def convert_title_list_v2(titles):
     titles_ = []
@@ -591,7 +577,6 @@ class AmazonOOData_sasrec(RecBaseDataset):
             
     def __getitem__(self, index):
 
-        # TODO this assumes image input, not general enough
         ann = self.annotation.iloc[index]
         if self.use_his:
             a = ann['InteractedItemIDs']
@@ -600,7 +585,7 @@ class AmazonOOData_sasrec(RecBaseDataset):
                 InteractedNum -= 1
 
             if len(a) < self.max_lenght:
-                b = [0]* (self.max_lenght-len(a)) # assuming padding idx is zero
+                b = [0]* (self.max_lenght-len(a)) 
                 b.extend(a)
             elif len(a)> self.max_lenght:
                 b = a[-self.max_lenght:]
