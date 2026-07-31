@@ -50,7 +50,7 @@ def main(
     batch_size: int=2,
     beam_size: int=4,
 ):
-    assert (base_model), "Please specify a --base_model, e.g. --base_model='decapoda-research/llama-7b-hf'"
+    assert (base_model), "Please specify a --base_model, e.g. --base_model='xxx/llama-7b-hf'"
     
     test_data_path = f"data/{dataset}/test/test.json"
     print("test data path:", test_data_path)
