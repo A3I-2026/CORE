@@ -1,10 +1,3 @@
-"""
- This file is from
- Copyright (c) 2022, salesforce.com, inc.
- All rights reserved.
- SPDX-License-Identifier: BSD-3-Clause
- For full license text, see the LICENSE_Lavis file in the repo root or https://opensource.org/licenses/BSD-3-Clause
-"""
 
 import logging
 import os
@@ -120,16 +113,7 @@ class BaseDatasetBuilder:
         self._download_vis()
 
     def _download_ann(self):
-        """
-        Download annotation files if necessary.
-        All the vision-language datasets should have annotations of unified format.
-
-        storage_path can be:
-          (1) relative/absolute: will be prefixed with env.cache_root to make full path if relative.
-          (2) basename/dirname: will be suffixed with base name of URL if dirname is provided.
-
-        Local annotation paths should be relative.
-        """
+  
         anns = self.config.build_info.annotations
 
         splits = anns.keys()
