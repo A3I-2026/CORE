@@ -43,29 +43,16 @@ class BasicDataset(Dataset):
         raise NotImplementedError
     
     def getUserNegItems(self, users):
-        """
-        not necessary for large dataset
-        it's stupid to return all neg items in super large dataset
-        """
+      
         raise NotImplementedError
     
     def getSparseGraph(self):
-        """
-        build a graph in torch.sparse.IntTensor.
-        Details in NGCF's matrix form
-        A = 
-            |I,   R|
-            |R^T, I|
-        """
+    
         raise NotImplementedError
 
 
 class GnnDataset(BasicDataset):
-    """
-    Dataset type for pytorch \n
-    Incldue graph information
-    gowalla dataset
-    """
+ 
     def __init__(self,config, path="../data/gowalla"):
         # train or test
         # cprint(f'loading [{path}]')
@@ -114,16 +101,7 @@ class GnnDataset(BasicDataset):
         print(f"{self.m_users} users, {self.n_items} items")
         print(f"{config.dataset} Sparsity : {(self.validDataSize + self.testDataSize+self.train_size) / self.m_users / self.n_items}")
 
-        # (users,items), bipartite graph
-        # self.UserItemNet = csr_matrix((np.ones(len(self.trainUser)), (self.trainUser, self.trainItem)),
-        #                               shape=(self.m_users, self.n_items))
-        # self.users_D = np.array(self.UserItemNet.sum(axis=1)).squeeze()
-        # self.users_D[self.users_D == 0.] = 1
-        # self.items_D = np.array(self.UserItemNet.sum(axis=0)).squeeze()
-        # self.items_D[self.items_D == 0.] = 1.
-        # # pre-calculate
-        # self._allPos = self.getUserPosItems(list(range(self.n_user)))
-        # self.__testDict = self.__build_test()
+      
         self._register_graph()
         
         print(":%s is ready to go"%(config.dataset))
