@@ -47,9 +47,9 @@ class Rec2Base(BaseModel):
     @classmethod
     def to_be_trained(self):
         """
-        确保模型返回True以允许训练
+        Ensure the model returns True to allow training
         """
-        print(f"[模型训练状态] Rec2Base.to_be_trained() 被调用，强制返回True", flush=True)
+        print(f"[Model Training Status] Rec2Base.to_be_trained() called, forced to return True", flush=True)
         return True
 
     def init_tokenizer(cls):
@@ -71,21 +71,6 @@ class Rec2Base(BaseModel):
                 return contextlib.nullcontext()
         except Exception:
             return contextlib.nullcontext()
-
-    # @classmethod
-    # def init_Qformer(cls, num_query_token, vision_width, cross_attention_freq=2):
-    #     encoder_config = BertConfig.from_pretrained("bert-base-uncased")
-    #     encoder_config.encoder_width = vision_width
-    #     # insert cross-attention layer every other block
-    #     encoder_config.add_cross_attention = True
-    #     encoder_config.cross_attention_freq = cross_attention_freq
-    #     encoder_config.query_length = num_query_token
-    #     Qformer = BertLMHeadModel(config=encoder_config)
-    #     query_tokens = nn.Parameter(
-    #         torch.zeros(1, num_query_token, encoder_config.hidden_size)
-    #     )
-    #     query_tokens.data.normal_(mean=0.0, std=encoder_config.initializer_range)
-    #     return Qformer, query_tokens
     
     @classmethod
     def init_rec_encoder(self, rec_model, config, precision):
@@ -93,17 +78,17 @@ class Rec2Base(BaseModel):
             print("### rec_encoder:", "MF")
             rec_model = MatrixFactorization(config)
             
-            # 👇 ================= 新增的 MF 权重加载逻辑 ================= 👇
+            # 👇 ================= Added MF weight loading logic ================= 👇
             if hasattr(config, 'pretrained_path') and config.pretrained_path:
-                print(f"🚀 [修复] 正在尝试加载 MF 底座权重: {config.pretrained_path}")
+                print(f"🚀 [Fix] Attempting to load MF base weights: {config.pretrained_path}")
                 try:
-                    # 将权重加载到 CPU 内存中，后续 DDP 或模型本身会负责将其搬到 NPU/GPU
+                    # Load the weights into CPU memory; later DDP or the model itself will be responsible for moving them to NPU/GPU
                     state_dict = torch.load(config.pretrained_path, map_location='cpu')
-                    # strict=False 允许灵活加载，忽略预训练中多余的 loss 预测层等
+                    # strict=False allows flexible loading, ignoring redundant loss prediction layers from pre-training, etc.
                     rec_model.load_state_dict(state_dict, strict=False)
-                    print("✅ [修复] MF 底座权重加载成功！大模型恢复视力！")
+                    print("✅ [Fix] MF base weights loaded successfully! The large model has restored its vision!")
                 except Exception as e:
-                    print(f"❌ [修复] MF 底座加载失败，报错: {e}")
+                    print(f"❌ [Fix] Failed to load MF base, error: {e}")
             else:
                 print("skip loading pretrained rec encoder (no valid path provided)")
             # 👆 ========================================================== 👆
@@ -131,18 +116,6 @@ class Rec2Base(BaseModel):
             warnings.warn(" the input rec_model is not MF, LightGCN or sasrec, or DCN, we won't utilize the rec_encoder directly.")
             # raise NotImplementedError("the current version olny supports the following models: MF,...")
         return rec_model
-
-    # @classmethod
-    # def init_vision_encoder(
-    #     cls, model_name, img_size, drop_path_rate, use_grad_checkpoint, precision
-    # ):
-    #     assert model_name == "eva_clip_g", "vit model must be eva_clip_g for current version of MiniGPT-4"
-    #     visual_encoder = create_eva_vit_g(
-    #         img_size, drop_path_rate, use_grad_checkpoint, precision
-    #     )
-
-    #     ln_vision = LayerNorm(visual_encoder.num_features)
-    #     return visual_encoder, ln_vision
 
     def load_from_pretrained(self, url_or_filename):
         if is_url(url_or_filename):
