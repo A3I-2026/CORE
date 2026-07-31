@@ -1,9 +1,4 @@
-"""
- Copyright (c) 2022, salesforce.com, inc.
- All rights reserved.
- SPDX-License-Identifier: BSD-3-Clause
- For full license text, see the LICENSE_Lavis file in the repo root or https://opensource.org/licenses/BSD-3-Clause
-"""
+
 
 import logging
 import torch
@@ -11,8 +6,7 @@ from omegaconf import OmegaConf
 
 from minigpt4.common.registry import registry
 from minigpt4.models.base_model import BaseModel
-# from minigpt4.models.blip2 import Blip2Base
-# from minigpt4.models.mini_gpt4 import MiniGPT4
+
 from minigpt4.processors.base_processor import BaseProcessor
 # from minigpt4.models.minigpt4rec import MiniGPT4Rec
 from minigpt4.models.minigpt4rec_v2 import MiniGPT4Rec_v2
@@ -23,8 +17,7 @@ from minigpt4.models.rec_model import Rec2Base
 __all__ = [
     "load_model",
     "BaseModel",
-    # "Blip2Base",
-    # "MiniGPT4",
+
     "Rec2Base",
     # "MiniGPT4Rec",
     "MiniGPT4Rec_v2",
@@ -33,24 +26,7 @@ __all__ = [
 
 
 def load_model(name, model_type, is_eval=False, device="cpu", checkpoint=None):
-    """
-    Load supported models.
 
-    To list all available models and types in registry:
-    >>> from minigpt4.models import model_zoo
-    >>> print(model_zoo)
-
-    Args:
-        name (str): name of the model.
-        model_type (str): type of the model.
-        is_eval (bool): whether the model is in eval mode. Default: False.
-        device (str): device to use. Default: "cpu".
-        checkpoint (str): path or to checkpoint. Default: None.
-            Note that expecting the checkpoint to have the same keys in state_dict as the model.
-
-    Returns:
-        model (torch.nn.Module): model.
-    """
 
     model = registry.get_model_class(name).from_pretrained(model_type=model_type)
 
